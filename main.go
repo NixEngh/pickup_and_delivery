@@ -5,10 +5,38 @@ import (
 )
 
 func main() {
-    problem, _ := load_problem("../Data/Call_7_Vehicle_3.txt")
-	//solution := []int{13, 13, 0, 8, 10, 10, 17, 17, 8, 0, 3, 3, 4, 4, 15, 15, 11, 12, 11, 16, 16, 12, 0, 9, 9, 5, 5, 14, 14, 0, 7, 7, 1, 1, 0, 6, 18, 18, 2, 6, 2}
+	problem, _ := load_problem("../Data/Call_7_Vehicle_3.txt")
 
 	fmt.Println(problem.GenerateInitialSolution())
-    fmt.Println(problem.GenerateRandomSolution())
+	fmt.Println(problem.GenerateRandomSolution())
+}
 
+func RunExperiment(problem *Problem, algorithm func(*Problem) ([]int, int)) {
+
+	costs := make([]int, 0)
+	solutions := make([][]int, 0)
+	for i := 0; i < 10; i++ {
+		solution, cost := algorithm(problem)
+		costs = append(costs, cost)
+		solutions = append(solutions, solution)
+	}
+
+	average_solution := 0
+	for _, cost := range costs {
+        average_solution+=cost
+	}
+    average_solution /= len(costs)
+
+    best_cost := costs[0]
+    best_solution := solutions[0]
+
+    for i, cost := range costs[1:] {
+        if cost < best_cost {
+            best_cost = cost
+            best_solution = solutions[i]
+        }
+    }
+
+    
+    
 }

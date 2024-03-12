@@ -46,3 +46,5 @@ func (p *Problem) GenerateRandomSolution() []int {
 	solution = append(solution, vehicles[0]...)
 	return solution
 }
+
+func (p *Problem) one_reinsert()
