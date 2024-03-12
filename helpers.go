@@ -28,15 +28,10 @@ func getTour(solution []int, vehicleIndex int) []int {
 	return solution[start_ind:end_ind]
 }
 
-func calculateImprovement(initialCost int, bestCost int) float64 {
-	return 100 * (float64(initialCost) - float64(bestCost)) / float64(initialCost)
-
-}
-
 type CSVTableRow struct {
 	Algorithm    string
 	AverageCost  float64
-	BestCost     float64
+	BestCost     int
 	Improvement  float64
 	RunningTime  float64
 	BestSolution []int

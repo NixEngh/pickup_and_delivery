@@ -1,26 +1,26 @@
 package main
 
 type Vehicle struct {
-	Index       int
-	HomeNode    int
+	Index        int
+	HomeNode     int
 	StartingTime int
-	Capacity    int
-    TravelTimes [][]int
-    TravelCosts [][]int
+	Capacity     int
+	TravelTimes  [][]int
+	TravelCosts  [][]int
 }
 
 type Call struct {
-	Index                 int
-	OriginNode            int
-    OriginCostForVehicle  []int
-    OriginTimeForVehicle  []int
-	DestinationNode       int
-    DestinationCostForVehicle  []int
-    DestinationTimeForVehicle  []int
-	Size                  int
-	CostOfNotTransporting int
-	PickupTimeWindow      TimeWindow
-	DeliveryTimeWindow    TimeWindow
+	Index                     int
+	OriginNode                int
+	OriginCostForVehicle      []int
+	OriginTimeForVehicle      []int
+	DestinationNode           int
+	DestinationCostForVehicle []int
+	DestinationTimeForVehicle []int
+	Size                      int
+	CostOfNotTransporting     int
+	PickupTimeWindow          TimeWindow
+	DeliveryTimeWindow        TimeWindow
 }
 
 type TimeWindow struct {
@@ -29,11 +29,11 @@ type TimeWindow struct {
 }
 
 type Problem struct {
-	NumberOfNodes int
+	Name             string
+	NumberOfNodes    int
 	NumberOfVehicles int
-	Vehicles        []Vehicle
-	NumberOfCalls   int
-	Calls           []Call
-	CallVehicleMap    map[int][]int
+	Vehicles         []Vehicle
+	NumberOfCalls    int
+	Calls            []Call
+	CallVehicleMap   map[int][]int
 }
-

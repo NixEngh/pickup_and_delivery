@@ -16,6 +16,7 @@ func load_problem(path string) (Problem, error) {
 	defer file.Close()
 
 	var p Problem
+    p.Name = path
 	scanner := bufio.NewScanner(file)
 
 	// Read number of nodes
