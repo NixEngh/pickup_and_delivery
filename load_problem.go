@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func load_problem(path string) (Problem, error) {
+func LoadProblem(path string) (Problem, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return Problem{}, err
@@ -16,7 +16,9 @@ func load_problem(path string) (Problem, error) {
 	defer file.Close()
 
 	var p Problem
-    p.Name = path
+
+    p.Name = strings.TrimSuffix(strings.TrimPrefix(path, "./Data/"), ".txt")
+
 	scanner := bufio.NewScanner(file)
 
 	// Read number of nodes
@@ -81,7 +83,7 @@ func load_problem(path string) (Problem, error) {
         scanner.Scan()
 
         vehicleDetails := strings.Split(scanner.Text(), ",")
-        vehicle_index, _ := strconv.Atoi(vehicleDetails[0])
+        vehicleIndex, _ := strconv.Atoi(vehicleDetails[0])
 
         for _, call := range vehicleDetails[1:] {
             callIndex, err := strconv.Atoi(call)
@@ -89,7 +91,7 @@ func load_problem(path string) (Problem, error) {
                 return Problem{}, fmt.Errorf("failed to parse call index")
             }
 
-            p.CallVehicleMap[callIndex] = append(p.CallVehicleMap[callIndex], vehicle_index)
+            p.CallVehicleMap[callIndex] = append(p.CallVehicleMap[callIndex], vehicleIndex)
         }
     }
 

@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 func (p *Problem) IsFeasible(solution []int) bool {
 
 	for i := 1; i <= p.NumberOfVehicles; i++ {
@@ -15,8 +13,7 @@ func (p *Problem) IsFeasible(solution []int) bool {
 func (p *Problem) IsVehicleFeasible(solution []int, vehicleIndex int) bool {
 
 	found := make(map[int]struct{})
-	tour := getTour(solution, vehicleIndex)
-    fmt.Println(tour)
+	tour := GetTour(solution, vehicleIndex)
 
 	vehicle := p.Vehicles[vehicleIndex]
 	currentTime := vehicle.StartingTime
@@ -44,13 +41,11 @@ func (p *Problem) IsVehicleFeasible(solution []int, vehicleIndex int) bool {
 		}
 
 		if timeAfterPrev > timeWindowToCheck.UpperBound {
-			fmt.Println("Time after prev: ", timeAfterPrev)
 			return false
 		}
 
 		// Capacity
 		if !isDelivery && currentLoad+currentCall.Size > vehicle.Capacity {
-			fmt.Println("Current load: ", currentLoad)
 			return false
 		}
 

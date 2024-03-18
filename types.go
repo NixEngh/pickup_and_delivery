@@ -37,3 +37,6 @@ type Problem struct {
 	Calls            []Call
 	CallVehicleMap   map[int][]int
 }
+
+type algorithm func(*Problem) ([]int, int)
+type operator func(p *Problem, solution []int)

@@ -2,51 +2,50 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"time"
-    "os"
 )
 
 func main() {
-    // Get all text files from ./Data/
-    files, err := os.ReadDir("./Data/")
-    if err != nil {
-        panic(err)
-    }
+	problems, err := LoadProblems("./Data/")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-    problems := make([]Problem, 0)
+	sort.Slice(problems, func(i, j int) bool {
+		return problems[i].Name < problems[j].Name
+	})
 
-    for _, file := range files {
-        if file.IsDir() {
-            continue
-        }
-        problem, err := load_problem("./Data/" + file.Name())
-        if err != nil {
-            fmt.Println(err)
-            continue
-        }
-        problems = append(problems, problem)
-        fmt.Println(problem.Name)
-    }
+    algorithms := map[string]algorithm{"0_Random_Search": RandomSearch, "1_Local_Search": LocalSearch, "2_Simulated_Annealing": SimulatedAnnealing}
+    //algorithms := map[string]algorithm{"Random_Search": RandomSearch}
 
-	problem, _ := load_problem("../Data/Call_7_Vehicle_3.txt")
-
-	fmt.Println(problem.GenerateInitialSolution())
-	fmt.Println(problem.GenerateRandomSolution())
+	directory := CreateResultsDirectory()
+	for _, problem := range problems {
+		rows := make([]CSVTableRow, 0)
+		for name, algorithm := range algorithms {
+			row := RunExperiment(&problem, name, algorithm)
+			rows = append(rows, row)
+		}
+		WriteToCSV(directory, problem.Name, rows)
+	}
+    runPythonScript(directory)
 }
 
-func RunExperiment(problem *Problem, algorithm func(*Problem) ([]int, int)) CSVTableRow {
+func RunExperiment(problem *Problem, algorithmName string, algorithm func(*Problem) ([]int, int)) CSVTableRow {
 	costs := make([]int, 0)
 	solutions := make([][]int, 0)
-	// Time the ten iterations
-	start := time.Now()
 
+	fmt.Println("Running experiment for problem: ", problem.Name)
+
+	start := time.Now()
 	for i := 0; i < 10; i++ {
 		solution, cost := algorithm(problem)
 		costs = append(costs, cost)
 		solutions = append(solutions, solution)
 	}
 	elapsed := time.Since(start)
-	averageTime := float64(elapsed / 10)
+	averageTime := elapsed.Seconds() / 10
 
 	var averageCost float64 = 0
 	for _, cost := range costs {
@@ -55,16 +54,16 @@ func RunExperiment(problem *Problem, algorithm func(*Problem) ([]int, int)) CSVT
 	averageCost /= float64(len(costs))
 
 	bestCost := costs[0]
-	best_solution := solutions[0]
+	bestSolution := solutions[0]
 
 	for i, cost := range costs[1:] {
 		if cost < bestCost {
 			bestCost = cost
-			best_solution = solutions[i]
+			bestSolution = solutions[i]
 		}
 	}
 
 	improvement := 100 * (averageCost - float64(bestCost)) / averageCost
 
-	return CSVTableRow{problem.Name, averageCost, bestCost, improvement, averageTime, best_solution}
+	return CSVTableRow{algorithmName, averageCost, bestCost, improvement, averageTime, bestSolution}
 }

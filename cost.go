@@ -17,7 +17,7 @@ func (p *Problem) CostFunction(solution []int) int {
 
 func (p *Problem) VehicleCostFunction(solution []int, vehicleIndex int) int {
 	found := make(map[int]struct{})
-	tour := getTour(solution, vehicleIndex)
+	tour := GetTour(solution, vehicleIndex)
 
 	vehicle := p.Vehicles[vehicleIndex]
 	total := 0
