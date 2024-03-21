@@ -38,5 +38,14 @@ type Problem struct {
 	CallVehicleMap   map[int][]int
 }
 
-type algorithm func(*Problem) ([]int, int)
-type operator func(p *Problem, solution []int)
+type Solution struct {
+    Problem *Problem
+    Solution []int
+    VehicleCost []int
+    OutSourceCost int
+    VehiclesToCheckCost map[int]bool
+    VehiclesToCheckFeasibility map[int]bool
+    cost int
+    feasible bool
+}
+

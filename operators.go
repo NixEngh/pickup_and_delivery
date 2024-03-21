@@ -4,19 +4,37 @@ import (
 	"math/rand"
 )
 
-func (p *Problem) GenerateInitialSolution() []int {
-	solution := make([]int, p.NumberOfVehicles)
+func (p *Problem) GenerateInitialSolution() Solution {
+	var solution Solution
+
+	solutionList := make([]int, p.NumberOfVehicles)
 	for i := 0; i < p.NumberOfVehicles; i++ {
-		solution[i] = 0
+		solutionList[i] = 0
 	}
 	for i := 1; i <= p.NumberOfCalls; i++ {
-		solution = append(solution, i)
-		solution = append(solution, i)
+		solutionList = append(solutionList, i)
+		solutionList = append(solutionList, i)
 	}
+
+	outsourceCost := 0
+
+	for i := 1; i <= p.NumberOfCalls; i++ {
+		outsourceCost += p.Calls[i].CostOfNotTransporting
+	}
+
+	solution = Solution{
+		Problem:           p,
+		Solution:          solutionList,
+		VehicleCost:       make([]int, p.NumberOfVehicles),
+		OutSourceCost:     outsourceCost,
+		Feasible:          true,
+		UncheckedVehicles: make([]int, 0),
+	}
+
 	return solution
 }
 
-func (p *Problem) GenerateRandomSolution() []int {
+func (p *Problem) GenerateRandomSolution() Solution {
 	vehicles := make([][]int, p.NumberOfVehicles+1)
 	for i := 0; i <= p.NumberOfVehicles; i++ {
 		vehicles[i] = make([]int, 0)
@@ -43,11 +61,31 @@ func (p *Problem) GenerateRandomSolution() []int {
 	}
 
 	solution = append(solution, vehicles[0]...)
-	return solution
+
+	s := Solution{
+		Problem:           p,
+		Solution:          solution,
+		VehicleCost:       make([]int, p.NumberOfVehicles),
+		OutSourceCost:     0,
+		Feasible:          false,
+		UncheckedVehicles: make([]int, 0),
+	}
+
+	for i := 1; i <= p.NumberOfVehicles; i++ {
+		s.UncheckedVehicles = append(s.UncheckedVehicles, i)
+	}
+
+	s.UpdateFeasibility()
+
+	if s.Feasible {
+		s.UpdateCosts()
+	}
+
+	return s
 }
 
-func moveFromOutsource(p *Problem, solution, callInds, zeroInds []int) {
-	possible_vehicles := p.CallVehicleMap[solution[callInds[0]]]
+func (s *Solution) moveFromOutsource(callInds, zeroInds []int) {
+	possible_vehicles := s.Problem.CallVehicleMap[s.Solution[callInds[0]]]
 	vehicle := possible_vehicles[rand.Intn(len(possible_vehicles))]
 
 	vehicleRangeEnd := zeroInds[vehicle-1]
@@ -63,11 +101,16 @@ func moveFromOutsource(p *Problem, solution, callInds, zeroInds []int) {
 		position2 = rand.Intn(vehicleRangeEnd+1-vehicleRangeStart) + vehicleRangeStart
 	}
 
-	MoveElement(solution, callInds[0], position1)
-	MoveElement(solution, callInds[1], position2)
+	s.moveCall(callInds[0], position1)
+	s.moveCall(callInds[1], position2)
+	return
 }
 
-func moveCallInVehicle(p *Problem, solution, callInds, zeroInds []int) {
+// Mutates *solution* such
+func (s *Solution) moveCallInVehicle(callInds, zeroInds []int) bool {
+
+	solution := s.Solution
+
 	pairs := []struct{ callIndex, delta int }{
 		{callInds[0], -1},
 		{callInds[0], 1},
@@ -80,34 +123,47 @@ func moveCallInVehicle(p *Problem, solution, callInds, zeroInds []int) {
 	})
 
 	for _, pair := range pairs {
-		if pair.callIndex+pair.delta < 0 || pair.callIndex+pair.delta == len(solution) || solution[pair.callIndex+pair.delta] == 0 {
+		switch {
+		case pair.callIndex+pair.delta < 0:
 			continue
+		case pair.callIndex+pair.delta == len(solution):
+			continue
+		case solution[pair.callIndex+pair.delta] == 0:
+			continue
+		case solution[pair.callIndex] == solution[pair.callIndex+pair.delta]:
+			continue
+		default:
+			s.moveCall(pair.callIndex, pair.callIndex+pair.delta)
+			return true
 		}
-		MoveElement(solution, pair.callIndex, pair.callIndex+pair.delta)
 	}
+
+	return false
 }
 
-func OneReinsert(p *Problem, solution []int) {
-	call := rand.Intn(p.NumberOfCalls) + 1
+func (s *Solution) OneReinsert() {
+	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
-	indices := FindIndices(solution, call, 0)
+	indices := FindIndices(s.Solution, call, 0)
 	callInds := indices[call]
 	zeroInds := indices[0]
 
 	isOutsourced := callInds[0] > zeroInds[len(zeroInds)-1]
 
 	if isOutsourced {
-		moveFromOutsource(p, solution, callInds, zeroInds)
+		s.moveFromOutsource(callInds, zeroInds)
 		return
 	}
 
-	outsourceProb := 0.3
+	outsourceProb := 0.5
 
 	if rand.Float64() > outsourceProb {
-		moveCallInVehicle(p, solution, callInds, zeroInds)
-		return
+		if ok := s.moveCallInVehicle(callInds, zeroInds); ok {
+			return
+		}
 	}
 
-	MoveElement(solution, callInds[0], zeroInds[len(zeroInds)-1])
-	MoveElement(solution, callInds[1], zeroInds[len(zeroInds)-1])
+	s.moveCall(callInds[1], zeroInds[len(zeroInds)-1])
+	s.moveCall(callInds[0], zeroInds[len(zeroInds)-1])
+	return
 }

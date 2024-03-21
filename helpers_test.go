@@ -15,6 +15,14 @@ func matchSlice(a, b []int) bool {
     }
     return true
 }
+func matchAnySlice(a []int, b [][]int) bool {
+    for _, option := range b {
+        if res := matchSlice(a, option); res {
+            return true
+        }
+    }
+    return false
+}
 
 func TestMoveElement(t *testing.T) {
     s := []int{1, 2, 3, 4, 5}

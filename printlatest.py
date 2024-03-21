@@ -23,7 +23,7 @@ for file in csv_files:
     print(f'File: {file}')  # Adjust slicing as needed to display the desired part of the filename
     print(df_without_best)
     print()
-    best_solution = [int(x) for x in df.loc[df['BestSolution'].idxmin(), "BestSolution"].strip('[]').split()]
+    best_solution = [int(x) for x in df.loc[df['BestCost'].idxmin(), "BestSolution"].strip('[]').split()]
     print("Best solution")
     print(best_solution)
     print()

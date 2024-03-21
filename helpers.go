@@ -25,7 +25,6 @@ func FindIndices[T comparable](slice []T, values ...T) map[T][]int {
 
 func MoveElement(s []int, source, destination int) []int {
 	if source < 0 || source >= len(s) {
-        fmt.Println("Source index out of range")
 		return s
 	}
 
@@ -41,6 +40,7 @@ func MoveElement(s []int, source, destination int) []int {
 	s[destination] = elem
 	return s
 }
+
 
 // Returns a slice of the solution that represents the tour of a vehicle.
 // If the slice is modified, the original solution will be modified as well
@@ -61,7 +61,11 @@ func PrintLoadingBar(current int, total int, steps int) {
 	percentage := float64(current) / float64(total) * 100
 	numberOfEquals := int(percentage / 100 * float64(steps))
 	bar := strings.Repeat("=", numberOfEquals) + strings.Repeat(" ", steps-numberOfEquals)
-	fmt.Printf("\r[%s] %.2f%%", bar, percentage)
+    //only print when the percentage changes
+
+    if current == 0 || int(percentage) % (100/steps) == 0 {
+        fmt.Printf("\r[%s] %.0f%%", bar, percentage)
+    }
 }
 
 func LoadProblems(directory string) ([]Problem, error) {

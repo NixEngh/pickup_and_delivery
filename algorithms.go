@@ -6,35 +6,34 @@ import (
 	"math/rand"
 )
 
-func RandomSearch(problem *Problem) ([]int, int) {
-	bestSolution := problem.GenerateInitialSolution()
-	bestCost := problem.CostFunction(bestSolution)
+func RandomSearch(problem *Problem) (bestSolution Solution, bestCost int) {
+	bestSolution = problem.GenerateInitialSolution()
+	bestCost = bestSolution.Cost
 
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-		solution := problem.GenerateRandomSolution()
-		cost := problem.CostFunction(solution)
-		if problem.IsFeasible(solution) && cost < bestCost {
+        solution := problem.GenerateInitialSolution()
+
+		if solution.Feasible && solution.Cost < bestCost {
 			bestSolution = solution
-			bestCost = cost
+			bestCost = solution.Cost
 		}
 	}
 	fmt.Println()
 	return bestSolution, bestCost
 }
 
-func LocalSearch(problem *Problem) ([]int, int) {
-	bestSolution := problem.GenerateInitialSolution()
-	bestCost := problem.CostFunction(bestSolution)
+func LocalSearch(problem *Problem) (bestSolution Solution, bestCost int) {
+	bestSolution = problem.GenerateInitialSolution()
+	bestCost = bestSolution.Cost
 
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-		OneReinsert(problem, bestSolution)
+        bestSolution.OneReinsert()
 
-		if problem.IsFeasible(bestSolution) {
-			cost := problem.CostFunction(bestSolution)
-			if cost < bestCost {
-				bestCost = cost
+		if bestSolution.Feasible {
+			if bestSolution.Cost < bestCost {
+				bestCost =  bestSolution.Cost
 			}
 		}
 	}
@@ -43,25 +42,25 @@ func LocalSearch(problem *Problem) ([]int, int) {
 	return bestSolution, bestCost
 }
 
-func SimulatedAnnealing(problem *Problem) ([]int, int) {
+
+func SimulatedAnnealing(problem *Problem) (bestSolution Solution, bestCost int) {
 	finalTemperature := 0.1
 
-	bestSolution := problem.GenerateInitialSolution()
-	bestCost := problem.CostFunction(bestSolution)
+	bestSolution = problem.GenerateInitialSolution()
+	bestCost = bestSolution.Cost
 
-	incubent := make([]int, len(bestSolution))
-	copy(incubent, bestSolution)
+    incubent := bestSolution.copy()
 
 	deltas := make([]int, 0)
 	fmt.Println("Simulated Annealing")
 	fmt.Println("Estimating initial temperature")
+
 	for i := 0; i < 100; i++ {
 		PrintLoadingBar(i, 100, 50)
-		neighbor := make([]int, len(incubent))
-		copy(neighbor, incubent)
-		OneReinsert(problem, neighbor)
+        neighbor := incubent.copy()
+		neighbor.OneReinsert()
 
-		neighborCost := problem.CostFunction(neighbor)
+		neighborCost := neighbor.Cost
 		deltaE := neighborCost - bestCost
 
 		if !problem.IsFeasible(neighbor) {
@@ -131,3 +130,4 @@ func SimulatedAnnealing(problem *Problem) ([]int, int) {
 
 	return bestSolution, bestCost
 }
+
