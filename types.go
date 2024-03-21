@@ -49,3 +49,5 @@ type Solution struct {
     feasible bool
 }
 
+type algorithm func (problem *Problem)  (BestSolution *Solution, BestCost int)
+

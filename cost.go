@@ -1,28 +1,36 @@
 package main
 
+
 // Updates (if relevant) and returns the cost of the solution
 func (s *Solution) Cost() int {
-    if len(s.VehiclesToCheckCost) == 0 {
-        return s.cost
-    }
+	if len(s.VehiclesToCheckCost) == 0 {
+		return s.cost
+	}
 
-    s.UpdateCosts()
-    return s.cost
+	s.UpdateCosts()
+	return s.cost
 }
 
-// Updates the cost of the solution
+// Updates the cost of the solution using VehiclesToCheckCost
 func (s *Solution) UpdateCosts() {
+	newCost := s.cost
+	newCost = -= s.OutSourceCost
 
-	total := 0
-    for vehicle, _ := range s.VehiclesToCheckCost {
-        total += s.VehicleCostFunction(vehicle)
-    }
+	for vehicle := range s.VehiclesToCheckCost {
+		newCost -= s.VehicleCost[vehicle]
+		s.VehicleCost[vehicle] = s.VehicleCostFunction(vehicle)
+		newCost += s.VehicleCost[vehicle]
+	}
 
-	s.OutSourceCost = s.OutSourceCostFunction()
-	total += s.OutSourceCost
-	s.cost = total
+    s.OutSourceCost = s.OutSourceCostFunction()
+
+	newCost += s.OutSourceCost
+	s.cost = newCost
+
+	s.VehiclesToCheckCost = make(map[int]bool, 0)
 }
 
+// Calculates the total cost of the solution
 func (s *Solution) CostFunction() int {
 	problem := s.Problem
 	total := 0
@@ -33,28 +41,24 @@ func (s *Solution) CostFunction() int {
 	return total
 }
 
-func (s *Solution) IndexedCostFunction() int {
-	return 0
-}
-
+// Total cost of outsourced vehicles
 func (s *Solution) OutSourceCostFunction() int {
 	total := 0
-	solution := s.Solution
-	problem := s.Problem
 
 	found := make(map[int]struct{})
-	for i := len(solution) - 1; solution[i] != 0; i-- {
-		if _, ok := found[solution[i]]; ok {
-			total += problem.Calls[solution[i]].CostOfNotTransporting
+	for i := len(s.Solution) - 1; s.Solution[i] != 0; i-- {
+		if _, ok := found[s.Solution[i]]; ok {
+			total += s.Problem.Calls[s.Solution[i]].CostOfNotTransporting
 		}
-		found[solution[i]] = struct{}{}
+		found[s.Solution[i]] = struct{}{}
 	}
 
 	return total
 }
 
+// Calculate the cost of one vehicle
+
 func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
-	// If outsourced:
 
 	problem := s.Problem
 	solution := s.Solution

@@ -2,68 +2,68 @@ package main
 
 
 // Move an element in the solution.
-func (s *Solution) moveCall(from int, to int) {
+func (s *Solution) MoveInSolution(from int, to int) {
 	zeroIndices := FindIndices(s.Solution, 0)[0]
 
 	var vehicleIndex int
 	for i, zeroIndex := range zeroIndices {
-		if zeroIndex > to {
-			vehicleIndex = i + 1
+		if zeroIndex >= to {
+			vehicleIndex = i+1
 			break
 		}
 	}
+
 	if vehicleIndex == 0 {
 		MoveElement(s.Solution, from, to)
-        return
+		return
 	}
 
-    s.VehiclesToCheckCost[vehicleIndex] = true
-    s.VehiclesToCheckCost[vehicleIndex] = true
+	s.VehiclesToCheckCost[vehicleIndex] = true
+    s.VehiclesToCheckFeasibility[vehicleIndex] = true
 
 	MoveElement(s.Solution, from, to)
 }
 
 // Creates a copy of the solution
-func (s *Solution) copy() Solution {
+func (s *Solution) copy() *Solution {
 	newSolution := make([]int, len(s.Solution))
 	copy(newSolution, s.Solution)
-    costVehicles := make(map[int]bool, len(s.VehiclesToCheckCost))
-    feasVehicles := make(map[int]bool, len(s.VehiclesToCheckFeasibility))
+	costVehicles := make(map[int]bool, len(s.VehiclesToCheckCost))
+	feasVehicles := make(map[int]bool, len(s.VehiclesToCheckFeasibility))
 
-	return Solution{
-        Problem: s.Problem,
-        Solution: newSolution,
-        VehicleCost: make([]int, len(s.VehicleCost)),
-        OutSourceCost: s.OutSourceCost,
-        VehiclesToCheckCost: costVehicles,
-        VehiclesToCheckFeasibility: feasVehicles,
-        feasible: s.feasible,
-        cost: s.cost,
-
-    }
+	return &Solution{
+		Problem:                    s.Problem,
+		Solution:                   newSolution,
+		VehicleCost:                make([]int, len(s.VehicleCost)+1),
+		OutSourceCost:              s.OutSourceCost,
+		VehiclesToCheckCost:        costVehicles,
+		VehiclesToCheckFeasibility: feasVehicles,
+		feasible:                   s.feasible,
+		cost:                       s.cost,
+	}
 }
 
 // Returns true if the solution is feasible
 func (s *Solution) Feasible() bool {
-    if len(s.VehiclesToCheckFeasibility) == 0 {
-        return s.feasible
-    }
+	if len(s.VehiclesToCheckFeasibility) == 0 {
+		return s.feasible
+	}
 
-    s.UpdateFeasibility()
-    return s.feasible
+	s.UpdateFeasibility()
+	return s.feasible
 }
 
 // Checks every unchecked vehicle, updates feasibility and resets the list of unchecked vehicles
 func (s *Solution) UpdateFeasibility() {
-    s.feasible = true
-    for vehicle, _ := range s.VehiclesToCheckFeasibility {
-        if !s.IsVehicleFeasible(vehicle) {
-            s.feasible = false
-            break
-        }
-    }
+	s.feasible = true
+	for vehicle, _ := range s.VehiclesToCheckFeasibility {
+		if !s.IsVehicleFeasible(vehicle) {
+			s.feasible = false
+			break
+		}
+	}
 
-    s.VehiclesToCheckFeasibility = make(map[int]bool, len(s.VehiclesToCheckFeasibility))
+	s.VehiclesToCheckFeasibility = make(map[int]bool, 0)
 }
 
 // Returns true if the vehicle is feasible

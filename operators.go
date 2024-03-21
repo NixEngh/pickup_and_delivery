@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-func (p *Problem) GenerateInitialSolution() Solution {
+func (p *Problem) GenerateInitialSolution() *Solution {
 	var solution Solution
 
 	solutionList := make([]int, p.NumberOfVehicles)
@@ -16,25 +16,26 @@ func (p *Problem) GenerateInitialSolution() Solution {
 		solutionList = append(solutionList, i)
 	}
 
-	outsourceCost := 0
-
-	for i := 1; i <= p.NumberOfCalls; i++ {
-		outsourceCost += p.Calls[i].CostOfNotTransporting
-	}
-
 	solution = Solution{
-		Problem:           p,
-		Solution:          solutionList,
-		VehicleCost:       make([]int, p.NumberOfVehicles),
-		OutSourceCost:     outsourceCost,
-		Feasible:          true,
-		UncheckedVehicles: make([]int, 0),
+		Problem:                    p,
+		Solution:                   solutionList,
+		VehicleCost:                make([]int, p.NumberOfVehicles+1),
+		OutSourceCost:              0,
+		VehiclesToCheckCost:        make(map[int]bool, 0),
+		VehiclesToCheckFeasibility: make(map[int]bool, 0),
+		cost:                       0,
+		feasible:                   true,
 	}
 
-	return solution
+
+
+	solution.OutSourceCost = solution.OutSourceCostFunction()
+	solution.cost = solution.OutSourceCost
+
+	return &solution
 }
 
-func (p *Problem) GenerateRandomSolution() Solution {
+func (p *Problem) GenerateRandomSolution() *Solution {
 	vehicles := make([][]int, p.NumberOfVehicles+1)
 	for i := 0; i <= p.NumberOfVehicles; i++ {
 		vehicles[i] = make([]int, 0)
@@ -63,25 +64,28 @@ func (p *Problem) GenerateRandomSolution() Solution {
 	solution = append(solution, vehicles[0]...)
 
 	s := Solution{
-		Problem:           p,
-		Solution:          solution,
-		VehicleCost:       make([]int, p.NumberOfVehicles),
-		OutSourceCost:     0,
-		Feasible:          false,
-		UncheckedVehicles: make([]int, 0),
+		Problem:                    p,
+		Solution:                   solution,
+		VehicleCost:                make([]int, p.NumberOfVehicles+1),
+		OutSourceCost:              0,
+		VehiclesToCheckCost:        make(map[int]bool, 0),
+		VehiclesToCheckFeasibility: make(map[int]bool, 0),
 	}
 
 	for i := 1; i <= p.NumberOfVehicles; i++ {
-		s.UncheckedVehicles = append(s.UncheckedVehicles, i)
+		if vehicles[i][0] != 0 {
+			s.VehiclesToCheckCost[i] = true
+			s.VehiclesToCheckFeasibility[i] = true
+		}
 	}
 
 	s.UpdateFeasibility()
 
-	if s.Feasible {
+	if s.Feasible() {
 		s.UpdateCosts()
 	}
 
-	return s
+	return &s
 }
 
 func (s *Solution) moveFromOutsource(callInds, zeroInds []int) {
@@ -101,8 +105,8 @@ func (s *Solution) moveFromOutsource(callInds, zeroInds []int) {
 		position2 = rand.Intn(vehicleRangeEnd+1-vehicleRangeStart) + vehicleRangeStart
 	}
 
-	s.moveCall(callInds[0], position1)
-	s.moveCall(callInds[1], position2)
+	s.MoveInSolution(callInds[0], position1)
+	s.MoveInSolution(callInds[1], position2)
 	return
 }
 
@@ -133,7 +137,7 @@ func (s *Solution) moveCallInVehicle(callInds, zeroInds []int) bool {
 		case solution[pair.callIndex] == solution[pair.callIndex+pair.delta]:
 			continue
 		default:
-			s.moveCall(pair.callIndex, pair.callIndex+pair.delta)
+			s.MoveInSolution(pair.callIndex, pair.callIndex+pair.delta)
 			return true
 		}
 	}
@@ -163,7 +167,7 @@ func (s *Solution) OneReinsert() {
 		}
 	}
 
-	s.moveCall(callInds[1], zeroInds[len(zeroInds)-1])
-	s.moveCall(callInds[0], zeroInds[len(zeroInds)-1])
+	s.MoveInSolution(callInds[1], zeroInds[len(zeroInds)-1])
+	s.MoveInSolution(callInds[0], zeroInds[len(zeroInds)-1])
 	return
 }
