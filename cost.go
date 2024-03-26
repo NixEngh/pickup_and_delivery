@@ -14,7 +14,7 @@ func (s *Solution) Cost() int {
 // Updates the cost of the solution using VehiclesToCheckCost
 func (s *Solution) UpdateCosts() {
 	newCost := s.cost
-	newCost = -= s.OutSourceCost
+	newCost -= s.OutSourceCost
 
 	for vehicle := range s.VehiclesToCheckCost {
 		newCost -= s.VehicleCost[vehicle]

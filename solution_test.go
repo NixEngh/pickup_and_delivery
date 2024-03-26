@@ -22,3 +22,5 @@ func TestCompareMoveVehicle(t *testing.T) {
         t.Log("Solution: ", solution.Solution)
     }
 }
+
+

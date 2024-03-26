@@ -27,8 +27,6 @@ func (p *Problem) GenerateInitialSolution() *Solution {
 		feasible:                   true,
 	}
 
-
-
 	solution.OutSourceCost = solution.OutSourceCostFunction()
 	solution.cost = solution.OutSourceCost
 
@@ -112,7 +110,6 @@ func (s *Solution) moveFromOutsource(callInds, zeroInds []int) {
 
 // Mutates *solution* such
 func (s *Solution) moveCallInVehicle(callInds, zeroInds []int) bool {
-
 	solution := s.Solution
 
 	pairs := []struct{ callIndex, delta int }{

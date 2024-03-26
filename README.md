@@ -16,5 +16,5 @@ It also contains `results.txt` wich is an automatically generated file in the fo
 ## How to run
 Write `go run .` in the root directory.
 
-## To run tests
+## To run test
 `go test -v`

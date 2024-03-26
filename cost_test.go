@@ -1,155 +1,152 @@
 package main
 
 import (
-    "testing"
+	"testing"
 )
 
 func TestCompareCostFunctions(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    solution := p.GenerateInitialSolution()
-    solution.UpdateCosts()
+	solution := p.GenerateInitialSolution()
+	solution.UpdateCosts()
 
-    if solution.Cost() != solution.CostFunction() {
-        t.Errorf("Generated solution has different costs")
-    }
+	if solution.Cost() != solution.CostFunction() {
+		t.Errorf("Generated solution has different costs")
+	}
 
-    var cost int
-    var realCost int
+	var cost int
+	var realCost int
 
-    for i := 0; i < 20; i++ {
-        solution.OneReinsert()
-        if len(solution.VehiclesToCheckCost) != 1 {
-            t.Errorf("Expected 1, got %d", len(solution.VehiclesToCheckCost))
-        }
-        cost = solution.Cost()
-        if len(solution.VehiclesToCheckCost) != 0 {
-            t.Errorf("Expected 0, got %d", len(solution.VehiclesToCheckCost))
-        }
-        realCost = solution.CostFunction()
+	for i := 0; i < 20; i++ {
+		solution.OneReinsert()
+		cost = solution.Cost()
+		if len(solution.VehiclesToCheckCost) != 0 {
+			t.Errorf("Expected 0, got %d", len(solution.VehiclesToCheckCost))
+		}
+		realCost = solution.CostFunction()
 
-        if cost != realCost {
-            t.Errorf("Expected %d, got %d, for i %d", realCost, cost, i)
-        }
-    }
+		if cost != realCost {
+			t.Errorf("Expected %d, got %d, for i %d", realCost, cost, i)
+		}
+	}
 }
 
 func TestCostsForRandomSolutions(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    for i := 0; i < 20; i++ {
-        solution := p.GenerateRandomSolution()
-        cost := solution.Cost()
-        realCost := solution.CostFunction()
+	for i := 0; i < 20; i++ {
+		solution := p.GenerateRandomSolution()
+		cost := solution.Cost()
+		realCost := solution.CostFunction()
 
-        if cost != realCost {
-            t.Errorf("Expected %d, got %d", realCost, cost)
-        }
-    }
+		if cost != realCost {
+			t.Errorf("Expected %d, got %d", realCost, cost)
+		}
+	}
 }
 
 func TestUpdateCosts(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    solution := p.GenerateInitialSolution()
+	solution := p.GenerateInitialSolution()
 
+	cost_before := solution.Cost()
+	solution.UpdateCosts()
+	cost_after := solution.Cost()
 
-    cost_before := solution.Cost()
-    solution.UpdateCosts()
-    cost_after := solution.Cost()
+	if cost_before != cost_after {
+		t.Errorf("Cost_before %d, Cost_after %d", cost_before, cost_after)
+	}
 
-    if cost_before != cost_after {
-        t.Errorf("Cost_before %d, Cost_after %d", cost_before, cost_after)
-    }
+	twoIndices := FindIndices(solution.Solution, 2)[2]
 
-    twoIndices := FindIndices(solution.Solution, 4)[4]
-    solution.MoveInSolution(twoIndices[0], 0)
-    solution.MoveInSolution(twoIndices[1], 0)
-    solution.UpdateCosts()
+	solution.MoveInSolution(twoIndices[0], 0)
+	solution.MoveInSolution(twoIndices[1], 0)
 
-    if solution.Cost() != solution.CostFunction() {
-        t.Errorf("Costs are not equal")
-    }
+	if solution.Cost() != solution.CostFunction() {
+		t.Error("Costs are not equal", solution.Cost(), solution.CostFunction())
+	}
 
-    zeroIndices := FindIndices(solution.Solution, 0)[0]
-    solution.MoveInSolution(0, zeroIndices[len(zeroIndices)-1])
-    solution.MoveInSolution(0, zeroIndices[len(zeroIndices)-1])
-    solution.UpdateCosts()
+	zeroIndices := FindIndices(solution.Solution, 0)[0]
 
-    if solution.Cost() != solution.CostFunction() {
-        t.Errorf("Costs are not equal")
-    }
+	solution.MoveInSolution(0, zeroIndices[len(zeroIndices)-1])
+
+	solution.MoveInSolution(0, zeroIndices[len(zeroIndices)-1])
+	solution.UpdateCosts()
+
+	if solution.Cost() != solution.CostFunction() {
+		t.Errorf("Costs are not equal")
+	}
 }
 
 func TestCostCheckVehiclesAreUpdated(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    solution := p.GenerateInitialSolution()
+	solution := p.GenerateInitialSolution()
 
-    if len(solution.VehiclesToCheckCost) != 0 {
-        t.Error("Mistake in GenerateInitialSolution", len(solution.VehiclesToCheckCost))
-    }
+	if len(solution.VehiclesToCheckCost) != 0 {
+		t.Error("Mistake in GenerateInitialSolution", len(solution.VehiclesToCheckCost))
+	}
 
-    solution.OneReinsert()
+	solution.OneReinsert()
 
-
-    if len(solution.VehiclesToCheckCost) != 1 {
-        t.Error("Mistake in OneReinsert", len(solution.VehiclesToCheckCost))
-        t.Log(solution.VehiclesToCheckCost)
-    }
+	if len(solution.VehiclesToCheckCost) != 1 {
+		t.Error("Mistake in OneReinsert", len(solution.VehiclesToCheckCost))
+		t.Log(solution.VehiclesToCheckCost)
+	}
 }
 
 func TestVehicleCostFunction(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    solution := p.GenerateInitialSolution()
-    oneIndices := FindIndices(solution.Solution, 1)[1]
+	solution := p.GenerateInitialSolution()
+	oneIndices := FindIndices(solution.Solution, 1)[1]
 
-    solution.MoveInSolution(oneIndices[0], 0)
-    solution.MoveInSolution(oneIndices[1], 0)
+	solution.MoveInSolution(oneIndices[0], 0)
+	solution.MoveInSolution(oneIndices[1], 0)
 
-    expectedCost := solution.CostFunction()
-    calculatedCost := solution.OutSourceCostFunction() + solution.VehicleCostFunction(1)
+	expectedCost := solution.CostFunction()
+	calculatedCost := solution.OutSourceCostFunction() + solution.VehicleCostFunction(1)
 
-    if expectedCost != calculatedCost {
-        t.Errorf("Expected %d, got %d", expectedCost, calculatedCost)
-    }
+	if expectedCost != calculatedCost {
+		t.Errorf("Expected %d, got %d", expectedCost, calculatedCost)
+	}
 }
 
 func TestOutSourceCost(t *testing.T) {
-    p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-    if err != nil {
-        t.Error(err)
-    }
+	p, err := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	if err != nil {
+		t.Error(err)
+	}
 
-    solution := p.GenerateInitialSolution()
-    oneIndices := FindIndices(solution.Solution, 1)[1]
+	solution := p.GenerateInitialSolution()
+	oneIndices := FindIndices(solution.Solution, 1)[1]
 
-    solution.MoveInSolution(oneIndices[0], 0)
-    solution.MoveInSolution(oneIndices[1], 0)
+	solution.MoveInSolution(oneIndices[0], 0)
+	solution.MoveInSolution(oneIndices[1], 0)
 
-    twoIndices := FindIndices(solution.Solution, 2)[2]
-    solution.MoveInSolution(twoIndices[0], 0)
-    solution.MoveInSolution(twoIndices[1], 0)
+	twoIndices := FindIndices(solution.Solution, 2)[2]
+	solution.MoveInSolution(twoIndices[0], 0)
+	solution.MoveInSolution(twoIndices[1], 0)
 
-    solution.UpdateCosts()
+	solution.UpdateCosts()
 
-    if solution.OutSourceCost != solution.OutSourceCostFunction() {
-        t.Errorf("Expected %d, got %d", solution.OutSourceCostFunction(), solution.OutSourceCost)
-    }
+	if solution.OutSourceCost != solution.OutSourceCostFunction() {
+		t.Errorf("Expected %d, got %d", solution.OutSourceCostFunction(), solution.OutSourceCost)
+	}
 }
