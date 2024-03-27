@@ -33,21 +33,23 @@ func (s *Solution) copy() *Solution {
 	newSolution := make([]int, len(s.Solution))
 	copy(newSolution, s.Solution)
 
+	newVehicleCost := make([]int, len(s.VehicleCost))
+	copy(newVehicleCost, s.VehicleCost)
+
 	costVehicles := make(map[int]bool, len(s.VehiclesToCheckCost))
-    for vehicle := range s.VehiclesToCheckCost {
-        costVehicles[vehicle] = true
-    }
+	for vehicle := range s.VehiclesToCheckCost {
+		costVehicles[vehicle] = true
+	}
 
 	feasVehicles := make(map[int]bool, len(s.VehiclesToCheckFeasibility))
-    for vehicle := range s.VehiclesToCheckFeasibility {
-        feasVehicles[vehicle] = true
-    }
-    
+	for vehicle := range s.VehiclesToCheckFeasibility {
+		feasVehicles[vehicle] = true
+	}
 
 	return &Solution{
 		Problem:                    s.Problem,
 		Solution:                   newSolution,
-		VehicleCost:                make([]int, len(s.VehicleCost)+1),
+		VehicleCost:                newVehicleCost,
 		OutSourceCost:              s.OutSourceCost,
 		VehiclesToCheckCost:        costVehicles,
 		VehiclesToCheckFeasibility: feasVehicles,

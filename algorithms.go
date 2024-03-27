@@ -12,7 +12,7 @@ func RandomSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
 
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-        solution := problem.GenerateInitialSolution()
+		solution := problem.GenerateInitialSolution()
 
 		if solution.Feasible() && solution.Cost() < bestCost {
 			bestSolution = solution
@@ -27,21 +27,23 @@ func LocalSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
 	bestSolution = problem.GenerateInitialSolution()
 	bestCost = bestSolution.Cost()
 
+    feasibleCount := 0
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-        bestSolution.OneReinsert()
+		bestSolution.OneReinsert()
 
 		if bestSolution.Feasible() {
+            feasibleCount++
 			if bestSolution.Cost() < bestCost {
-				bestCost =  bestSolution.Cost()
+				bestCost = bestSolution.Cost()
 			}
 		}
 	}
 	fmt.Println()
+    fmt.Println("Feasible solutions found:", feasibleCount)
 
 	return bestSolution, bestCost
 }
-
 
 func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int) {
 	finalTemperature := 0.1
@@ -49,7 +51,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 	bestSolution = problem.GenerateInitialSolution()
 	bestCost = bestSolution.Cost()
 
-    incubent := bestSolution.copy()
+	incubent := bestSolution.copy()
 
 	deltas := make([]int, 0)
 	fmt.Println("Simulated Annealing")
@@ -57,11 +59,11 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 
 	for i := 0; i < 100; i++ {
 		PrintLoadingBar(i, 100, 50)
-        neighbor := incubent.copy()
+		neighbor := incubent.copy()
 		neighbor.OneReinsert()
 
 		neighborCost := neighbor.Cost()
-		deltaE := neighborCost - bestCost
+		deltaE := neighborCost - incubent.Cost()
 
 		if !neighbor.Feasible() {
 			continue
@@ -96,19 +98,19 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 
 	T := T0
 
+    feasibleCount := 0
 	for i := 0; i < 9900; i++ {
 		PrintLoadingBar(i, 9900, 50)
-		neighbor := incubent.copy() 
+		neighbor := incubent.copy()
+		neighbor.OneReinsert()
 
-        neighbor.OneReinsert()
+		deltaE := neighbor.Cost() - incubent.Cost()
 
-		deltaE := neighbor.Cost() - bestCost
-		isFeasible := neighbor.Feasible()
-
-		if !isFeasible {
+		if !neighbor.Feasible() {
 			T *= alpha
 			continue
 		}
+        feasibleCount++
 
 		if deltaE < 0 {
 			incubent = neighbor
@@ -124,7 +126,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 	}
 
 	fmt.Println()
+    fmt.Println("Feasible solutions found:", feasibleCount)
 
 	return bestSolution, bestCost
 }
-

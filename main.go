@@ -22,7 +22,7 @@ func main() {
 	})
 
 	algorithms := map[string]algorithm{
-        "0_Random_Search":       RandomSearch,
+        //"0_Random_Search":       RandomSearch,
         "1_Local_Search":        LocalSearch,
 		"2_Simulated_Annealing": SimulatedAnnealing,
     }

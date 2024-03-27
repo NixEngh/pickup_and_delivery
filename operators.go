@@ -4,89 +4,42 @@ import (
 	"math/rand"
 )
 
-func (p *Problem) GenerateInitialSolution() *Solution {
-	var solution Solution
-
-	solutionList := make([]int, p.NumberOfVehicles)
-	for i := 0; i < p.NumberOfVehicles; i++ {
-		solutionList[i] = 0
-	}
-	for i := 1; i <= p.NumberOfCalls; i++ {
-		solutionList = append(solutionList, i)
-		solutionList = append(solutionList, i)
-	}
-
-	solution = Solution{
-		Problem:                    p,
-		Solution:                   solutionList,
-		VehicleCost:                make([]int, p.NumberOfVehicles+1),
-		OutSourceCost:              0,
-		VehiclesToCheckCost:        make(map[int]bool, 0),
-		VehiclesToCheckFeasibility: make(map[int]bool, 0),
-		cost:                       0,
-		feasible:                   true,
-	}
-
-	solution.OutSourceCost = solution.OutSourceCostFunction()
-	solution.cost = solution.OutSourceCost
-
-	return &solution
+type operator interface {
+    apply(s *Solution)
 }
 
-func (p *Problem) GenerateRandomSolution() *Solution {
-	vehicles := make([][]int, p.NumberOfVehicles+1)
-	for i := 0; i <= p.NumberOfVehicles; i++ {
-		vehicles[i] = make([]int, 0)
+type OneReinsert struct {
+    problem *Problem
+}
+
+func (o *OneReinsert) apply(s *Solution) {
+	call := rand.Intn(s.Problem.NumberOfCalls) + 1
+
+	indices := FindIndices(s.Solution, call, 0)
+	callInds := indices[call]
+	zeroInds := indices[0]
+
+	isOutsourced := callInds[0] > zeroInds[len(zeroInds)-1]
+
+	if isOutsourced {
+		o.moveFromOutsource(s, callInds, zeroInds)
+		return
 	}
 
-	order := rand.Perm(p.NumberOfCalls)
-	for _, call := range order {
-		call += 1
-		vehicle := rand.Intn(p.NumberOfVehicles + 1)
-		vehicles[vehicle] = append(vehicles[vehicle], call)
-		vehicles[vehicle] = append(vehicles[vehicle], call)
-	}
+	outsourceProb := 0.5
 
-	for i := 1; i <= p.NumberOfVehicles; i++ {
-		rand.Shuffle(len(vehicles[i]), func(x, y int) {
-			vehicles[i][x], vehicles[i][y] = vehicles[i][y], vehicles[i][x]
-		})
-		vehicles[i] = append(vehicles[i], 0)
-	}
-
-	solution := make([]int, 0)
-	for i := 1; i <= p.NumberOfVehicles; i++ {
-		solution = append(solution, vehicles[i]...)
-	}
-
-	solution = append(solution, vehicles[0]...)
-
-	s := Solution{
-		Problem:                    p,
-		Solution:                   solution,
-		VehicleCost:                make([]int, p.NumberOfVehicles+1),
-		OutSourceCost:              0,
-		VehiclesToCheckCost:        make(map[int]bool, 0),
-		VehiclesToCheckFeasibility: make(map[int]bool, 0),
-	}
-
-	for i := 1; i <= p.NumberOfVehicles; i++ {
-		if vehicles[i][0] != 0 {
-			s.VehiclesToCheckCost[i] = true
-			s.VehiclesToCheckFeasibility[i] = true
+	if rand.Float64() > outsourceProb {
+		if ok := s.moveCallInVehicle(callInds, zeroInds); ok {
+			return
 		}
 	}
 
-	s.UpdateFeasibility()
-
-	if s.Feasible() {
-		s.UpdateCosts()
-	}
-
-	return &s
+	s.MoveInSolution(callInds[1], zeroInds[len(zeroInds)-1])
+	s.MoveInSolution(callInds[0], zeroInds[len(zeroInds)-1])
+	return
 }
 
-func (s *Solution) moveFromOutsource(callInds, zeroInds []int) {
+func (o *OneReinsert) moveFromOutsource(s *Solution, callInds, zeroInds []int) {
 	possible_vehicles := s.Problem.CallVehicleMap[s.Solution[callInds[0]]]
 	vehicle := possible_vehicles[rand.Intn(len(possible_vehicles))]
 
@@ -142,29 +95,49 @@ func (s *Solution) moveCallInVehicle(callInds, zeroInds []int) bool {
 	return false
 }
 
-func (s *Solution) OneReinsert() {
+type OldOneReinsert struct {}
+
+func (OldOneReinsert) apply(s *Solution) {
+	move_in_vehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
-	indices := FindIndices(s.Solution, call, 0)
-	callInds := indices[call]
-	zeroInds := indices[0]
-
-	isOutsourced := callInds[0] > zeroInds[len(zeroInds)-1]
-
-	if isOutsourced {
-		s.moveFromOutsource(callInds, zeroInds)
+	inds := FindIndices(s.Solution, call, 0)
+	if move_in_vehicle {
+		s.moveCallInVehicle(inds[call], inds[0])
 		return
 	}
 
-	outsourceProb := 0.5
+	zeroinds := inds[0]
+	callinds := inds[call]
 
-	if rand.Float64() > outsourceProb {
-		if ok := s.moveCallInVehicle(callInds, zeroInds); ok {
-			return
-		}
+	if callinds[1] < zeroinds[len(zeroinds)-1] {
+		s.MoveInSolution(callinds[1], zeroinds[len(zeroinds)-1])
+		s.MoveInSolution(callinds[0], zeroinds[len(zeroinds)-1])
+		return
 	}
 
-	s.MoveInSolution(callInds[1], zeroInds[len(zeroInds)-1])
-	s.MoveInSolution(callInds[0], zeroInds[len(zeroInds)-1])
+	vehicle := rand.Intn(s.Problem.NumberOfVehicles) + 1
+
+	vehicle_range_start := 0
+	vehicle_range_end := 0
+
+	if vehicle == 1 {
+		vehicle_range_end = zeroinds[0]
+	} else {
+		vehicle_range_start = zeroinds[vehicle-2]
+		vehicle_range_end = zeroinds[vehicle-1]
+	}
+	if vehicle_range_end-vehicle_range_start < 2 {
+		s.MoveInSolution(callinds[0], vehicle_range_end)
+		s.MoveInSolution(callinds[1], vehicle_range_end)
+		return
+	}
+	insert_index := rand.Intn(vehicle_range_end-(vehicle_range_start+1)) + vehicle_range_start + 1
+
+	s.MoveInSolution(callinds[0], insert_index)
+	s.MoveInSolution(callinds[1], insert_index)
+
 	return
 }
+
+
