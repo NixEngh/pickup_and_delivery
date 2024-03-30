@@ -28,6 +28,27 @@ type TimeWindow struct {
 	UpperBound int
 }
 
+type CallNode struct {
+	Node          int
+	IsDelivery    bool
+	timeWindow    TimeWindow
+	OperationTime int
+}
+
+func (c *Call) GetCallNode(isDelivery bool, vehicleIndex int) CallNode {
+    if isDelivery {
+        return CallNode{Node: c.DestinationNode, IsDelivery: true, timeWindow: c.DeliveryTimeWindow, OperationTime: c.DestinationTimeForVehicle[vehicleIndex]}
+    } else {
+        return CallNode{Node: c.OriginNode, IsDelivery: false, timeWindow: c.PickupTimeWindow, OperationTime: c.OriginTimeForVehicle[vehicleIndex]}
+    }
+}
+
+type InsertionPoint struct {
+	pickupIndex   int
+	deliveryIndex int
+	cost          int
+}
+
 type Problem struct {
 	Name             string
 	NumberOfNodes    int
@@ -42,6 +63,13 @@ type Solution struct {
     Problem *Problem
     Solution []int
     VehicleCost []int
+    VehicleCumulativeCosts [][]int
+    // todo mae sure these are long enough
+    // Contains the leftover capacity after each call
+    VehicleCumulativeCapacities [][]int
+    // todo
+    // For an index, contains the arrival time at that node
+    VehicleCumulativeTimes [][]int
     OutSourceCost int
     VehiclesToCheckCost map[int]bool
     VehiclesToCheckFeasibility map[int]bool

@@ -24,28 +24,31 @@ func RandomSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
 }
 
 func LocalSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
+	operator := OldOneReinsert{}
+
 	bestSolution = problem.GenerateInitialSolution()
 	bestCost = bestSolution.Cost()
 
-    feasibleCount := 0
+	feasibleCount := 0
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-		bestSolution.OneReinsert()
+		operator.apply(bestSolution)
 
 		if bestSolution.Feasible() {
-            feasibleCount++
+			feasibleCount++
 			if bestSolution.Cost() < bestCost {
 				bestCost = bestSolution.Cost()
 			}
 		}
 	}
 	fmt.Println()
-    fmt.Println("Feasible solutions found:", feasibleCount)
+	fmt.Println("Feasible solutions found:", feasibleCount)
 
 	return bestSolution, bestCost
 }
 
 func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int) {
+    operator := OldOneReinsert{}
 	finalTemperature := 0.1
 
 	bestSolution = problem.GenerateInitialSolution()
@@ -60,7 +63,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 	for i := 0; i < 100; i++ {
 		PrintLoadingBar(i, 100, 50)
 		neighbor := incubent.copy()
-		neighbor.OneReinsert()
+		operator.apply(neighbor)
 
 		neighborCost := neighbor.Cost()
 		deltaE := neighborCost - incubent.Cost()
@@ -98,11 +101,11 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 
 	T := T0
 
-    feasibleCount := 0
+	feasibleCount := 0
 	for i := 0; i < 9900; i++ {
 		PrintLoadingBar(i, 9900, 50)
 		neighbor := incubent.copy()
-		neighbor.OneReinsert()
+        operator.apply(neighbor)
 
 		deltaE := neighbor.Cost() - incubent.Cost()
 
@@ -110,7 +113,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 			T *= alpha
 			continue
 		}
-        feasibleCount++
+		feasibleCount++
 
 		if deltaE < 0 {
 			incubent = neighbor
@@ -126,7 +129,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 	}
 
 	fmt.Println()
-    fmt.Println("Feasible solutions found:", feasibleCount)
+	fmt.Println("Feasible solutions found:", feasibleCount)
 
 	return bestSolution, bestCost
 }

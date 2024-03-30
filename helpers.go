@@ -43,6 +43,7 @@ func MoveElement(s []int, source, destination int) []int {
 
 // Returns a slice of the solution that represents the tour of a vehicle.
 // If the slice is modified, the original solution will be modified as well
+// Only includes the calls, not the 0's
 func GetTour(solution []int, vehicleIndex int) []int {
 	zeroIndexes := FindIndices(solution, 0)[0]
 	start_ind := 0

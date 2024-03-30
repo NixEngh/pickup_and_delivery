@@ -5,105 +5,32 @@ import (
 )
 
 type operator interface {
-    apply(s *Solution)
+	apply(s *Solution)
 }
 
-type OneReinsert struct {
-    problem *Problem
+type PlaceOptimally struct {
+	n_v_to_check int
 }
 
-func (o *OneReinsert) apply(s *Solution) {
-	call := rand.Intn(s.Problem.NumberOfCalls) + 1
+// PlaceOptimally picks a call and concurrently checks the best possible location to place it
+func (o PlaceOptimally) apply(s *Solution) {
+	n_v_to_check := min(o.n_v_to_check, s.Problem.NumberOfVehicles)
+	vecs := rand.Perm(s.Problem.NumberOfVehicles)
 
-	indices := FindIndices(s.Solution, call, 0)
-	callInds := indices[call]
-	zeroInds := indices[0]
+	for i := 0; i < n_v_to_check; i++ {
 
-	isOutsourced := callInds[0] > zeroInds[len(zeroInds)-1]
-
-	if isOutsourced {
-		o.moveFromOutsource(s, callInds, zeroInds)
-		return
 	}
-
-	outsourceProb := 0.5
-
-	if rand.Float64() > outsourceProb {
-		if ok := s.moveCallInVehicle(callInds, zeroInds); ok {
-			return
-		}
-	}
-
-	s.MoveInSolution(callInds[1], zeroInds[len(zeroInds)-1])
-	s.MoveInSolution(callInds[0], zeroInds[len(zeroInds)-1])
-	return
 }
 
-func (o *OneReinsert) moveFromOutsource(s *Solution, callInds, zeroInds []int) {
-	possible_vehicles := s.Problem.CallVehicleMap[s.Solution[callInds[0]]]
-	vehicle := possible_vehicles[rand.Intn(len(possible_vehicles))]
+type OldOneReinsert struct{}
 
-	vehicleRangeEnd := zeroInds[vehicle-1]
-	vehicleRangeStart := 0
-	if vehicle > 1 {
-		vehicleRangeStart = zeroInds[vehicle-2] + 1
-	}
-
-	position1, position2 := vehicleRangeEnd, vehicleRangeEnd
-
-	if vehicleRangeStart != vehicleRangeEnd {
-		position1 = rand.Intn(vehicleRangeEnd-vehicleRangeStart) + vehicleRangeStart
-		position2 = rand.Intn(vehicleRangeEnd+1-vehicleRangeStart) + vehicleRangeStart
-	}
-
-	s.MoveInSolution(callInds[0], position1)
-	s.MoveInSolution(callInds[1], position2)
-	return
-}
-
-// Mutates *solution* such
-func (s *Solution) moveCallInVehicle(callInds, zeroInds []int) bool {
-	solution := s.Solution
-
-	pairs := []struct{ callIndex, delta int }{
-		{callInds[0], -1},
-		{callInds[0], 1},
-		{callInds[1], -1},
-		{callInds[1], 1},
-	}
-
-	rand.Shuffle(4, func(i, j int) {
-		pairs[i], pairs[j] = pairs[j], pairs[i]
-	})
-
-	for _, pair := range pairs {
-		switch {
-		case pair.callIndex+pair.delta < 0:
-			continue
-		case pair.callIndex+pair.delta == len(solution):
-			continue
-		case solution[pair.callIndex+pair.delta] == 0:
-			continue
-		case solution[pair.callIndex] == solution[pair.callIndex+pair.delta]:
-			continue
-		default:
-			s.MoveInSolution(pair.callIndex, pair.callIndex+pair.delta)
-			return true
-		}
-	}
-
-	return false
-}
-
-type OldOneReinsert struct {}
-
-func (OldOneReinsert) apply(s *Solution) {
+func (o OldOneReinsert) apply(s *Solution) {
 	move_in_vehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	inds := FindIndices(s.Solution, call, 0)
 	if move_in_vehicle {
-		s.moveCallInVehicle(inds[call], inds[0])
+		o.moveCallInVehicle(s, inds[call], inds[0])
 		return
 	}
 
@@ -140,4 +67,34 @@ func (OldOneReinsert) apply(s *Solution) {
 	return
 }
 
+func (o OldOneReinsert) moveCallInVehicle(s *Solution, callInds, zeroInds []int) bool {
+	solution := s.Solution
+	pairs := []struct{ callIndex, delta int }{
+		{callInds[0], -1},
+		{callInds[0], 1},
+		{callInds[1], -1},
+		{callInds[1], 1},
+	}
 
+	rand.Shuffle(4, func(i, j int) {
+		pairs[i], pairs[j] = pairs[j], pairs[i]
+	})
+
+	for _, pair := range pairs {
+		switch {
+		case pair.callIndex+pair.delta < 0:
+			continue
+		case pair.callIndex+pair.delta == len(solution):
+			continue
+		case solution[pair.callIndex+pair.delta] == 0:
+			continue
+		case solution[pair.callIndex] == solution[pair.callIndex+pair.delta]:
+			continue
+		default:
+			s.MoveInSolution(pair.callIndex, pair.callIndex+pair.delta)
+			return true
+		}
+	}
+
+	return false
+}
