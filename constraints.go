@@ -71,7 +71,7 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 	total := 0
 	previousNode := vehicle.HomeNode
 
-    s.VehicleCumulativeCosts[vehicleIndex] = make([]int, len(tour))
+	s.VehicleCumulativeCosts[vehicleIndex] = make([]int, len(tour))
 
 	for i, call := range tour {
 		_, isDelivery := found[call]
@@ -86,7 +86,7 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 			total += currentCall.DestinationCostForVehicle[vehicleIndex]
 			previousNode = currentCall.DestinationNode
 		}
-        s.VehicleCumulativeCosts[vehicleIndex][i] = total
+		s.VehicleCumulativeCosts[vehicleIndex][i] = total
 		found[call] = struct{}{}
 	}
 
@@ -118,8 +118,7 @@ func (s *Solution) UpdateFeasibility() {
 
 // Returns true if the vehicle is feasible
 func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
-	found := make(map[int]struct{})
-	tour := GetTour(s.Solution, vehicleIndex)
+    tour := GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
 
 	vehicle := s.Problem.Vehicles[vehicleIndex]
 	currentTime := vehicle.StartingTime
@@ -128,59 +127,48 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 
 	s.VehicleCumulativeTimes[vehicleIndex] = make([]int, len(tour))
 	s.VehicleCumulativeCapacities[vehicleIndex] = make([]int, len(tour))
+    openCount := 0
 
-	for i, call := range tour {
-		_, isDelivery := found[call]
-		currentCall := s.Problem.Calls[call]
-
+	for i, callNode := range tour {
 		// Checks
 		// Time
-		var timeWindowToCheck TimeWindow
-		if !isDelivery {
-			timeWindowToCheck = currentCall.PickupTimeWindow
-		} else {
-			timeWindowToCheck = currentCall.DeliveryTimeWindow
-		}
+        timeAfterPrev := currentTime + vehicle.TravelTimes[prevNode][callNode.Node]
 
-		var timeAfterPrev int
-		if !isDelivery {
-			timeAfterPrev = currentTime + vehicle.TravelTimes[prevNode][currentCall.OriginNode]
-		} else {
-			timeAfterPrev = currentTime + vehicle.TravelTimes[prevNode][currentCall.DestinationNode]
-		}
-
-		if timeAfterPrev > timeWindowToCheck.UpperBound {
-			return false
-		}
 		s.VehicleCumulativeTimes[vehicleIndex][i] = timeAfterPrev
 
-		// Capacity
-		if !isDelivery && currentLoad+currentCall.Size > vehicle.Capacity {
+		if timeAfterPrev > callNode.TimeWindow.UpperBound {
 			return false
 		}
 
-        currCap := vehicle.Capacity - currentLoad+currentCall.Size
-		s.VehicleCumulativeCapacities[vehicleIndex][i] = currCap
-        if currCap < 0 {
-            panic("Negative capacity")
+        size := s.Problem.Calls[callNode.callIndex].Size
+        if callNode.IsDelivery{
+            size -= 1
         }
-        
+
+		currCap := vehicle.Capacity - (currentLoad + size)
+		s.VehicleCumulativeCapacities[vehicleIndex][i] = currCap
+
+		// Capacity
+		if currentLoad+size > vehicle.Capacity {
+			return false
+		}
 
 		// Prepare for next iteration
-		var nodeTime int
-		if !isDelivery {
-			currentLoad += currentCall.Size
-			nodeTime = currentCall.OriginTimeForVehicle[vehicleIndex]
-			prevNode = currentCall.OriginNode
-		} else {
-			currentLoad -= currentCall.Size
-			nodeTime = currentCall.DestinationTimeForVehicle[vehicleIndex]
-			prevNode = currentCall.DestinationNode
-		}
-		currentTime = max(timeAfterPrev, timeWindowToCheck.LowerBound) + nodeTime
+        currentLoad += size
+        nodeTime := callNode.OperationTime
+        prevNode = callNode.Node
 
-		found[call] = struct{}{}
+		currentTime = max(timeAfterPrev, callNode.TimeWindow.LowerBound) + nodeTime
+        if !callNode.IsDelivery {
+            openCount += 1
+        } else {
+            openCount -= 1
+        }
 	}
+
+    if openCount != 1 {
+        return false
+    }
 
 	return true
 }

@@ -41,10 +41,12 @@ func MoveElement(s []int, source, destination int) []int {
 	return s
 }
 
-// Returns a slice of the solution that represents the tour of a vehicle.
-// If the slice is modified, the original solution will be modified as well
-// Only includes the calls, not the 0's
-func GetTour(solution []int, vehicleIndex int) []int {
+func relativeToAbsolute() {
+
+}
+
+// returns the indices such that solution[start_ind:end_ind] gives you the calls in the tour. If the length of the tour is 0, you get end_ind,end_ind
+func GetTourIndices(solution []int, vehicleIndex int) []int {
 	zeroIndexes := FindIndices(solution, 0)[0]
 	start_ind := 0
 
@@ -52,8 +54,52 @@ func GetTour(solution []int, vehicleIndex int) []int {
 		start_ind = zeroIndexes[vehicleIndex-2] + 1
 	}
 	end_ind := zeroIndexes[vehicleIndex-1]
+	if end_ind == 0 {
+		return []int{end_ind, end_ind}
+	}
 
-	return solution[start_ind:end_ind]
+	return []int{start_ind, end_ind}
+}
+
+// Returns a slice of the solution that represents the tour of a vehicle.
+// If the slice is modified, the original solution will be modified as well
+// Only includes the calls, not the 0's
+func GetTour(solution []int, vehicleIndex int) []int {
+	indices := GetTourIndices(solution, vehicleIndex)
+
+	return solution[indices[0]:indices[1]]
+}
+
+func GetCallNodeTour(p *Problem, solution []int, vehicleIndex int) []CallNode {
+	tourIndices := GetTourIndices(solution, vehicleIndex)
+	tour := make([]CallNode, 0)
+
+	isDelivery := make(map[int]bool)
+
+	for _, callIndex := range solution[tourIndices[0]:tourIndices[1]] {
+		call := p.Calls[callIndex]
+		timeWindow := call.PickupTimeWindow
+		node := call.OriginNode
+		operationTime := call.OriginTimeForVehicle[vehicleIndex]
+		cost := call.OriginCostForVehicle[vehicleIndex]
+		if isDelivery[callIndex] {
+			timeWindow = call.DeliveryTimeWindow
+			node = call.DestinationNode
+			operationTime = call.DestinationCostForVehicle[vehicleIndex]
+			cost = call.DestinationCostForVehicle[vehicleIndex]
+		}
+		tour = append(tour, CallNode{
+			callIndex:     callIndex,
+			TimeWindow:    timeWindow,
+			Node:          node,
+			IsDelivery:    isDelivery[callIndex],
+			OperationTime: operationTime,
+			Cost:          cost,
+		})
+
+		isDelivery[callIndex] = true
+	}
+	return tour
 }
 
 func PrintLoadingBar(current int, total int, steps int) {

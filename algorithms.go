@@ -48,7 +48,7 @@ func LocalSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
 }
 
 func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int) {
-    operator := OldOneReinsert{}
+	operator := OldOneReinsert{}
 	finalTemperature := 0.1
 
 	bestSolution = problem.GenerateInitialSolution()
@@ -105,7 +105,7 @@ func SimulatedAnnealing(problem *Problem) (bestSolution *Solution, bestCost int)
 	for i := 0; i < 9900; i++ {
 		PrintLoadingBar(i, 9900, 50)
 		neighbor := incubent.copy()
-        operator.apply(neighbor)
+		operator.apply(neighbor)
 
 		deltaE := neighbor.Cost() - incubent.Cost()
 

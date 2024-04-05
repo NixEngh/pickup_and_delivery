@@ -15,7 +15,7 @@ type PlaceOptimally struct {
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
 func (o PlaceOptimally) apply(s *Solution) {
 	n_v_to_check := min(o.n_v_to_check, s.Problem.NumberOfVehicles)
-	vecs := rand.Perm(s.Problem.NumberOfVehicles)
+//	vecs := rand.Perm(s.Problem.NumberOfVehicles)
 
 	for i := 0; i < n_v_to_check; i++ {
 

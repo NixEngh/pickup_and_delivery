@@ -17,14 +17,17 @@ func (p *Problem) GenerateInitialSolution() *Solution {
 	}
 
 	solution = Solution{
-		Problem:                    p,
-		Solution:                   solutionList,
-		VehicleCost:                make([]int, p.NumberOfVehicles+1),
-		OutSourceCost:              0,
-		VehiclesToCheckCost:        make(map[int]bool, 0),
-		VehiclesToCheckFeasibility: make(map[int]bool, 0),
-		cost:                       0,
-		feasible:                   true,
+		Problem:                     p,
+		Solution:                    solutionList,
+		VehicleCost:                 make([]int, p.NumberOfVehicles+1),
+		OutSourceCost:               0,
+		VehiclesToCheckCost:         make(map[int]bool, 0),
+		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
+		VehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		VehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
+		VehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
+		cost:                        0,
+		feasible:                    true,
 	}
 
 	solution.OutSourceCost = solution.OutSourceCostFunction()
@@ -62,12 +65,15 @@ func (p *Problem) GenerateRandomSolution() *Solution {
 	solution = append(solution, vehicles[0]...)
 
 	s := Solution{
-		Problem:                    p,
-		Solution:                   solution,
-		VehicleCost:                make([]int, p.NumberOfVehicles+1),
-		OutSourceCost:              0,
-		VehiclesToCheckCost:        make(map[int]bool, 0),
-		VehiclesToCheckFeasibility: make(map[int]bool, 0),
+		Problem:                     p,
+		Solution:                    solution,
+		VehicleCost:                 make([]int, p.NumberOfVehicles+1),
+		OutSourceCost:               0,
+		VehiclesToCheckCost:         make(map[int]bool, 0),
+		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
+		VehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		VehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
+		VehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
 	}
 
 	for i := 1; i <= p.NumberOfVehicles; i++ {
@@ -86,7 +92,7 @@ func (p *Problem) GenerateRandomSolution() *Solution {
 	return &s
 }
 
-// Move an element in the solution.
+// Move an element in the solution
 func (s *Solution) MoveInSolution(from int, to int) {
 	zeroIndices := FindIndices(s.Solution, 0)[0]
 
@@ -114,6 +120,21 @@ func (s *Solution) MoveInSolution(from int, to int) {
 	MoveElement(s.Solution, from, to)
 }
 
+// Move to a position in a vehicle from [0, len(tour)+1>
+func (s *Solution) MoveRelativeToVehicle(from int, newIndex RelativeIndex) {
+	tourIndices := GetTourIndices(s.Solution, newIndex.VehicleIndex)
+	zeroIndices := FindIndices(s.Solution, 0)[0]
+	absoluteIndex := newIndex.toAbsolute(zeroIndices)
+    
+
+	if from < tourIndices[0] {
+		s.MoveInSolution(from, absoluteIndex-1)
+		return
+	}
+
+	s.MoveInSolution(from, newIndex.toAbsolute(zeroIndices))
+}
+
 // Creates a copy of the solution
 func (s *Solution) copy() *Solution {
 	newSolution := make([]int, len(s.Solution))
@@ -132,99 +153,35 @@ func (s *Solution) copy() *Solution {
 		feasVehicles[vehicle] = true
 	}
 
+	copyVehicleCumulativeCosts := make([][]int, len(s.VehicleCumulativeCosts))
+	for i := range s.VehicleCumulativeCosts {
+		copyVehicleCumulativeCosts[i] = make([]int, len(s.VehicleCumulativeCosts[i]))
+		copy(copyVehicleCumulativeCosts[i], s.VehicleCumulativeCosts[i])
+	}
+
+	copyVehicleCumulativeCapacities := make([][]int, len(s.VehicleCumulativeCapacities))
+	for i := range s.VehicleCumulativeCapacities {
+		copyVehicleCumulativeCapacities[i] = make([]int, len(s.VehicleCumulativeCapacities[i]))
+		copy(copyVehicleCumulativeCapacities[i], s.VehicleCumulativeCapacities[i])
+	}
+
+	copyVehicleCumulativeTimes := make([][]int, len(s.VehicleCumulativeTimes))
+	for i := range s.VehicleCumulativeTimes {
+		copyVehicleCumulativeTimes[i] = make([]int, len(s.VehicleCumulativeTimes[i]))
+		copy(copyVehicleCumulativeTimes[i], s.VehicleCumulativeTimes[i])
+	}
+
 	return &Solution{
-		Problem:                    s.Problem,
-		Solution:                   newSolution,
-		VehicleCost:                newVehicleCost,
-		OutSourceCost:              s.OutSourceCost,
-		VehiclesToCheckCost:        costVehicles,
-		VehiclesToCheckFeasibility: feasVehicles,
-		feasible:                   s.feasible,
-		cost:                       s.cost,
+		Problem:                     s.Problem,
+		Solution:                    newSolution,
+		VehicleCost:                 newVehicleCost,
+		OutSourceCost:               s.OutSourceCost,
+		VehiclesToCheckCost:         costVehicles,
+		VehiclesToCheckFeasibility:  feasVehicles,
+		VehicleCumulativeCosts:      copyVehicleCumulativeCosts,
+		VehicleCumulativeCapacities: copyVehicleCumulativeCapacities,
+		VehicleCumulativeTimes:      copyVehicleCumulativeTimes,
+		feasible:                    s.feasible,
+		cost:                        s.cost,
 	}
-}
-
-// Iterate backwards and calculate how much time an insert can take without violating time feasibility
-func (s *Solution) CalulateTimeSlack(tour []int, vehicleIndex int, startIndex int) []int {
-	problem := s.Problem
-
-	if len(tour) == 0 {
-		return []int{}
-	}
-
-	timeSlack := make([]int, len(tour))
-	isPickup := make(map[int]bool)
-	var slack int
-
-	var callTimeWindow TimeWindow
-	var currentTime int
-	for i := len(tour) - 1; i >= startIndex; i-- {
-		call := problem.Calls[tour[i]]
-
-		if isPickup[tour[i]] {
-			callTimeWindow = call.DeliveryTimeWindow
-		} else {
-			callTimeWindow = call.PickupTimeWindow
-		}
-
-		currentTime = s.VehicleCumulativeTimes[vehicleIndex][i]
-		constraint := callTimeWindow.UpperBound - max(currentTime, callTimeWindow.LowerBound)
-		waitTime := max(0, callTimeWindow.LowerBound-currentTime)
-
-		if slack == 0 {
-			slack = constraint + waitTime
-		} else {
-			slack = min(slack, constraint) + waitTime
-		}
-
-		isPickup[tour[i]] = true
-		timeSlack[i] = slack
-	}
-	return timeSlack
-}
-
-// Get indices after which a call can be inserted
-func (s *Solution) GetVehicleInsertionPoints(tour []int, vehicleIndex, callIndex int) []InsertionPoint {
-	feasibleInsertionPoints := make([]int, len(tour))
-	pickupSlack := s.CalulateTimeSlack(tour, vehicleIndex, 0)
-
-	vehicle := s.Problem.Vehicles[vehicleIndex]
-	call := s.Problem.Calls[callIndex]
-	result := make([]InsertionPoint, 0)
-
-	isDelivery := make(map[int]bool)
-
-	var fromNode, toNode CallNode
-	for i := 0; i < len(tour)-1; i++ {
-		prevCall := s.Problem.Calls[tour[i]]
-		fromNode = prevCall.GetCallNode(isDelivery[tour[i]], vehicleIndex)
-		isDelivery[tour[i]] = true
-
-		prevCapacity := s.VehicleCumulativeCapacities[vehicleIndex][i]
-		if prevCapacity+prevCall.Size > vehicle.Capacity {
-			continue
-		}
-
-		nextCall := s.Problem.Calls[tour[i+1]]
-		toNode = nextCall.GetCallNode(isDelivery[tour[i+1]], vehicleIndex)
-
-		potentialNode := call.GetCallNode(false, vehicleIndex)
-
-		originalTimeBetweenNodes := vehicle.TravelTimes[fromNode.Node][toNode.Node]
-
-		hypotheticalStartTime := max(s.VehicleCumulativeTimes[vehicleIndex][i], fromNode.timeWindow.LowerBound) + fromNode.OperationTime
-        hypotheticalTime := hypotheticalStartTime
-        hypotheticalTime += vehicle.TravelTimes[fromNode.Node][callIndex]
-		hypotheticalTime = max(hypotheticalTime, call.PickupTimeWindow.LowerBound) + potentialNode.OperationTime
-        hypotheticalTime += vehicle.TravelTimes[callIndex][toNode.Node]
-
-        newTimeBetweenNodes := hypotheticalTime - hypotheticalStartTime
-
-		if newTimeBetweenNodes-originalTimeBetweenNodes > pickupSlack[i+1] {
-			continue
-		}
-
-	}
-
-	return result
 }

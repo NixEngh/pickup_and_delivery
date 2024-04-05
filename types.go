@@ -30,23 +30,53 @@ type TimeWindow struct {
 
 type CallNode struct {
 	Node          int
+	callIndex     int
 	IsDelivery    bool
-	timeWindow    TimeWindow
+	TimeWindow    TimeWindow
 	OperationTime int
+	Cost          int
 }
 
 func (c *Call) GetCallNode(isDelivery bool, vehicleIndex int) CallNode {
-    if isDelivery {
-        return CallNode{Node: c.DestinationNode, IsDelivery: true, timeWindow: c.DeliveryTimeWindow, OperationTime: c.DestinationTimeForVehicle[vehicleIndex]}
-    } else {
-        return CallNode{Node: c.OriginNode, IsDelivery: false, timeWindow: c.PickupTimeWindow, OperationTime: c.OriginTimeForVehicle[vehicleIndex]}
-    }
+	if isDelivery {
+		return CallNode{
+			Node:          c.DestinationNode,
+			callIndex:     c.Index,
+			IsDelivery:    true,
+			TimeWindow:    c.DeliveryTimeWindow,
+			OperationTime: c.DestinationTimeForVehicle[vehicleIndex],
+			Cost:          c.DestinationCostForVehicle[vehicleIndex],
+		}
+	} else {
+		return CallNode{
+			Node:          c.OriginNode,
+			callIndex:     c.Index,
+			IsDelivery:    false,
+			TimeWindow:    c.PickupTimeWindow,
+			OperationTime: c.OriginTimeForVehicle[vehicleIndex],
+			Cost:          c.OriginCostForVehicle[vehicleIndex],
+		}
+	}
 }
 
+type RelativeIndex struct {
+    VehicleIndex int
+    Index int
+}
+
+func (r *RelativeIndex) toAbsolute(zeroIndices []int) int{
+    var from int = 0
+    if r.VehicleIndex>1 {
+        from = zeroIndices[r.VehicleIndex-2]
+    }
+    return from+r.Index
+}
+
+// The indices should not take into account the extension when inserting
 type InsertionPoint struct {
-	pickupIndex   int
-	deliveryIndex int
-	cost          int
+	pickupIndex     RelativeIndex
+	deliveryIndex   RelativeIndex
+	costDiff int
 }
 
 type Problem struct {
@@ -60,22 +90,19 @@ type Problem struct {
 }
 
 type Solution struct {
-    Problem *Problem
-    Solution []int
-    VehicleCost []int
-    VehicleCumulativeCosts [][]int
-    // todo mae sure these are long enough
-    // Contains the leftover capacity after each call
-    VehicleCumulativeCapacities [][]int
-    // todo
-    // For an index, contains the arrival time at that node
-    VehicleCumulativeTimes [][]int
-    OutSourceCost int
-    VehiclesToCheckCost map[int]bool
-    VehiclesToCheckFeasibility map[int]bool
-    cost int
-    feasible bool
+	Problem                *Problem
+	Solution               []int
+	VehicleCost            []int
+	VehicleCumulativeCosts [][]int
+	// Contains the leftover capacity after each callnode
+	VehicleCumulativeCapacities [][]int
+	// For an index, contains the arrival time at that node
+	VehicleCumulativeTimes     [][]int
+	OutSourceCost              int
+	VehiclesToCheckCost        map[int]bool
+	VehiclesToCheckFeasibility map[int]bool
+	cost                       int
+	feasible                   bool
 }
 
-type algorithm func (problem *Problem)  (BestSolution *Solution, BestCost int)
-
+type algorithm func(problem *Problem) (BestSolution *Solution, BestCost int)
