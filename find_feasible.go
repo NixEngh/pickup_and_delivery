@@ -32,12 +32,47 @@ func (s *Solution) CalulateTimeSlack(tour []CallNode, vehicleIndex int, startInd
 	return timeSlack
 }
 
-func (s *Solution) checkCapacityConstraint(callNode CallNode, vehicleIndex int, inVehicleInsertInd int) bool {
+// Assumes to have checked every insertionpoint between pickup and delivery
+func (s *Solution) checkCapacityConstraint(call Call, insertAt InsertionPoint) bool {
+    s.UpdateFeasibility()
+    vehicleIndex := insertAt.pickupIndex.VehicleIndex
+    vehicle := s.Problem.Vehicles[vehicleIndex]
+
+    cumulativeCaps := s.VehicleCumulativeCapacities[vehicleIndex]
+
+    //  |1|2|1|2|
+    // |0|1|2|3|4|
+    // |a|1|2|1|2|
+    // x|0|1|2|3|4
+
+    prevCap := vehicle.Capacity
+    if insertAt.pickupIndex.Index > 0 {
+        prevCap = cumulativeCaps[insertAt.pickupIndex.Index-1]
+    }
+    if call.Size>prevCap {
+        return false
+    }
+
+    prevCap = prevCap - call.Size
+
+    if insertAt.deliveryIndex.Index > insertAt.pickupIndex.Index {
+        prevCap = cumulativeCaps[insertAt.deliveryIndex.Index-1]
+    }
+    if call.Size>prevCap-call.Size {
+        return false
+    }
+
+    return true
+}
+
+
+func (s *Solution) oldCheckCapacityConstraint(callNode CallNode, vehicleIndex int, inVehicleInsertInd int) bool {
 	s.UpdateFeasibility()
 	vehicleCumulativeCapacities := s.VehicleCumulativeCapacities[vehicleIndex]
 	vehicle := s.Problem.Vehicles[vehicleIndex]
 
 	call := s.Problem.Calls[callNode.callIndex]
+
 	if inVehicleInsertInd == 0 {
 		return call.Size <= vehicle.Capacity
 	}
@@ -103,12 +138,19 @@ func (i *InsertionPoint) storeCostDiff(s *Solution, call Call, tour []CallNode) 
 	if deliveryIndex > pickupIndex {
 		prevNode = tour[deliveryIndex-1].Node
 	}
-	nextNode = tour[deliveryIndex].Node
 
-	insertedCost := afterPickupInsertedCost - vehicle.TravelCosts[prevNode][nextNode]
-	insertedCost += vehicle.TravelCosts[prevNode][call.DestinationNode]
-	insertedCost += call.DestinationCostForVehicle[vehicleIndex]
-	insertedCost += vehicle.TravelCosts[call.DestinationNode][nextNode]
+	var insertedCost int
+	if deliveryIndex >= len(tour) {
+		insertedCost = afterPickupInsertedCost
+		insertedCost += vehicle.TravelCosts[prevNode][call.DestinationNode]
+		insertedCost += call.DestinationCostForVehicle[vehicleIndex]
+	} else {
+		nextNode = tour[deliveryIndex].Node
+		insertedCost = afterPickupInsertedCost - vehicle.TravelCosts[prevNode][nextNode]
+		insertedCost += vehicle.TravelCosts[prevNode][call.DestinationNode]
+		insertedCost += call.DestinationCostForVehicle[vehicleIndex]
+		insertedCost += vehicle.TravelCosts[call.DestinationNode][nextNode]
+	}
 
 	i.costDiff = currentCost - insertedCost + call.CostOfNotTransporting
 }
@@ -133,6 +175,18 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []Ins
 
 	pickupNode := call.GetCallNode(false, vehicleIndex)
 	deliveryNode := call.GetCallNode(true, vehicleIndex)
+
+    for i := 0; i < len(tour)+1; i++ {
+        for j := i; j < len(tour)+1; j++ {
+            insertAt := InsertionPoint{
+                pickupIndex: RelativeIndex{VehicleIndex: vehicleIndex, Index: i},
+                deliveryIndex: RelativeIndex{VehicleIndex: vehicleIndex, Index: j},
+            }
+            if !s.checkCapacityConstraint(call, insertAt) {
+                break
+            }
+        }
+    }
 
 	for i := 0; i < len(tour)+1; i++ {
 		if !s.checkCapacityConstraint(pickupNode, vehicleIndex, i) {
@@ -165,7 +219,7 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []Ins
 				deliveryIndex: RelativeIndex{VehicleIndex: vehicleIndex, Index: j},
 			}
 
-			insertionPoint.storeCostDiff(potentialSolution, call, tour)
+			insertionPoint.storeCostDiff(potentialSolution, call, potentialTour)
 
 			result = append(result, insertionPoint)
 		}

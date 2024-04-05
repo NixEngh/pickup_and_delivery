@@ -123,16 +123,41 @@ func (s *Solution) MoveInSolution(from int, to int) {
 // Move to a position in a vehicle from [0, len(tour)+1>
 func (s *Solution) MoveRelativeToVehicle(from int, newIndex RelativeIndex) {
 	tourIndices := GetTourIndices(s.Solution, newIndex.VehicleIndex)
+
+	if tourIndices[0] == tourIndices[1] {
+		if newIndex.Index != 0 {
+			panic("Index out of bounds")
+		}
+		s.MoveInSolution(from, tourIndices[0])
+		return
+	}
+
 	zeroIndices := FindIndices(s.Solution, 0)[0]
 	absoluteIndex := newIndex.toAbsolute(zeroIndices)
-    
 
 	if from < tourIndices[0] {
 		s.MoveInSolution(from, absoluteIndex-1)
 		return
 	}
 
-	s.MoveInSolution(from, newIndex.toAbsolute(zeroIndices))
+	s.MoveInSolution(from, absoluteIndex)
+}
+
+func (s *Solution) MoveCallToVehicle(callInds, zeroInds []int, insertionPoint InsertionPoint) {
+    newInds := s.MoveCallToOutsource(callInds, zeroInds)
+
+    s.MoveRelativeToVehicle(newInds[0], insertionPoint.pickupIndex)
+    s.MoveRelativeToVehicle(newInds[1], insertionPoint.deliveryIndex)
+}
+
+func (s *Solution) MoveCallToOutsource(callInds []int, zeroInds []int) []int{
+    if callInds[0] > zeroInds[len(zeroInds)-1] {
+        return callInds
+    }
+    moveTo := zeroInds[len(zeroInds)-1]
+    s.MoveInSolution(callInds[1], moveTo)
+    s.MoveInSolution(callInds[0], moveTo)
+    return []int{moveTo-1, moveTo}
 }
 
 // Creates a copy of the solution

@@ -60,23 +60,23 @@ func (c *Call) GetCallNode(isDelivery bool, vehicleIndex int) CallNode {
 }
 
 type RelativeIndex struct {
-    VehicleIndex int
-    Index int
+	VehicleIndex int
+	Index        int
 }
 
-func (r *RelativeIndex) toAbsolute(zeroIndices []int) int{
-    var from int = 0
-    if r.VehicleIndex>1 {
-        from = zeroIndices[r.VehicleIndex-2]
-    }
-    return from+r.Index
+func (r *RelativeIndex) toAbsolute(zeroIndices []int) int {
+	var from int = -1
+	if r.VehicleIndex > 1 {
+		from = zeroIndices[r.VehicleIndex-2]
+	}
+	return from + r.Index+1
 }
 
 // The indices should not take into account the extension when inserting
 type InsertionPoint struct {
-	pickupIndex     RelativeIndex
-	deliveryIndex   RelativeIndex
-	costDiff int
+	pickupIndex   RelativeIndex
+	deliveryIndex RelativeIndex
+	costDiff      int
 }
 
 type Problem struct {
@@ -103,6 +103,7 @@ type Solution struct {
 	VehiclesToCheckFeasibility map[int]bool
 	cost                       int
 	feasible                   bool
+	infeasiblereason           string
 }
 
 type algorithm func(problem *Problem) (BestSolution *Solution, BestCost int)
