@@ -69,7 +69,7 @@ func (r *RelativeIndex) toAbsolute(zeroIndices []int) int {
 	if r.VehicleIndex > 1 {
 		from = zeroIndices[r.VehicleIndex-2]
 	}
-	return from + r.Index+1
+	return from + r.Index + 1
 }
 
 // The indices should not take into account the extension when inserting
@@ -103,7 +103,7 @@ type Solution struct {
 	VehiclesToCheckFeasibility map[int]bool
 	cost                       int
 	feasible                   bool
-	infeasiblereason           string
+	infeasibleReason           string
 }
 
 type algorithm func(problem *Problem) (BestSolution *Solution, BestCost int)

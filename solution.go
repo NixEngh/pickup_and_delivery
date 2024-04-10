@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -99,11 +100,11 @@ func (s *Solution) MoveInSolution(from int, to int) {
 	fromVehicle, toVehicle := 0, 0
 
 	for i, zeroIndex := range zeroIndices {
-		if fromVehicle == 0 && zeroIndex >= from {
+		if fromVehicle == 0 && from < zeroIndex {
 			fromVehicle = i + 1
 		}
 
-		if toVehicle == 0 && zeroIndex >= to {
+		if toVehicle == 0 && (to < zeroIndex || (from > zeroIndex && to == zeroIndex)) {
 			toVehicle = i + 1
 		}
 	}
@@ -123,9 +124,11 @@ func (s *Solution) MoveInSolution(from int, to int) {
 // Move to a position in a vehicle from [0, len(tour)+1>
 func (s *Solution) MoveRelativeToVehicle(from int, newIndex RelativeIndex) {
 	tourIndices := GetTourIndices(s.Solution, newIndex.VehicleIndex)
+    tour := GetTour(s.Solution, newIndex.VehicleIndex)
 
 	if tourIndices[0] == tourIndices[1] {
 		if newIndex.Index != 0 {
+            fmt.Println(tour)
 			panic("Index out of bounds")
 		}
 		s.MoveInSolution(from, tourIndices[0])
@@ -143,21 +146,40 @@ func (s *Solution) MoveRelativeToVehicle(from int, newIndex RelativeIndex) {
 	s.MoveInSolution(from, absoluteIndex)
 }
 
-func (s *Solution) MoveCallToVehicle(callInds, zeroInds []int, insertionPoint InsertionPoint) {
-    newInds := s.MoveCallToOutsource(callInds, zeroInds)
+func (s *Solution) InsertCall(callNumber int, inds map[int][]int, insertionPoint InsertionPoint) {
+	callInds := inds[callNumber]
+	deliveryInd := callInds[1]
+	s.MoveRelativeToVehicle(callInds[0], insertionPoint.pickupIndex)
 
-    s.MoveRelativeToVehicle(newInds[0], insertionPoint.pickupIndex)
-    s.MoveRelativeToVehicle(newInds[1], insertionPoint.deliveryIndex)
+	if insertionPoint.pickupIndex.toAbsolute(inds[0]) > callInds[1] {
+		deliveryInd -= 1
+	}
+	insertionPoint.deliveryIndex.Index += 1
+	s.MoveRelativeToVehicle(deliveryInd, insertionPoint.deliveryIndex)
+    
 }
 
-func (s *Solution) MoveCallToOutsource(callInds []int, zeroInds []int) []int{
-    if callInds[0] > zeroInds[len(zeroInds)-1] {
-        return callInds
-    }
-    moveTo := zeroInds[len(zeroInds)-1]
-    s.MoveInSolution(callInds[1], moveTo)
-    s.MoveInSolution(callInds[0], moveTo)
-    return []int{moveTo-1, moveTo}
+func (s *Solution) MoveCallToVehicle(callNumber int, inds map[int][]int, insertionPoint InsertionPoint) {
+	newInds := s.MoveCallToOutsource(callNumber, inds)[callNumber]
+
+	s.MoveRelativeToVehicle(newInds[0], insertionPoint.pickupIndex)
+	s.MoveRelativeToVehicle(newInds[1], insertionPoint.deliveryIndex)
+}
+
+func (s *Solution) MoveCallToOutsource(callNumber int, inds map[int][]int) (newInds map[int][]int) {
+	callInds := inds[callNumber]
+	zeroInds := inds[0]
+
+	if callInds[0] > zeroInds[len(zeroInds)-1] {
+		return inds
+	}
+
+	moveTo := zeroInds[len(zeroInds)-1]
+	s.MoveInSolution(callInds[1], moveTo)
+	s.MoveInSolution(callInds[0], moveTo)
+
+	newInds = FindIndices(s.Solution, 0, callNumber)
+	return newInds
 }
 
 // Creates a copy of the solution

@@ -23,9 +23,9 @@ func FindIndices[T comparable](slice []T, values ...T) map[T][]int {
 	return indicesMap
 }
 
-func MoveElement(s []int, source, destination int) []int {
+func MoveElement[T comparable](s []T, source, destination int) {
 	if source < 0 || source >= len(s) {
-		return s
+		return
 	}
 
 	elem := s[source]
@@ -34,15 +34,11 @@ func MoveElement(s []int, source, destination int) []int {
 	} else if source > destination {
 		copy(s[destination+1:source+1], s[destination:source])
 	} else {
-		return s
+		return
 	}
 
 	s[destination] = elem
-	return s
-}
-
-func relativeToAbsolute() {
-
+	return
 }
 
 // returns the indices such that solution[start_ind:end_ind] gives you the calls in the tour. If the length of the tour is 0, you get end_ind,end_ind
@@ -85,7 +81,7 @@ func GetCallNodeTour(p *Problem, solution []int, vehicleIndex int) []CallNode {
 		if isDelivery[callIndex] {
 			timeWindow = call.DeliveryTimeWindow
 			node = call.DestinationNode
-			operationTime = call.DestinationCostForVehicle[vehicleIndex]
+			operationTime = call.DestinationTimeForVehicle[vehicleIndex]
 			cost = call.DestinationCostForVehicle[vehicleIndex]
 		}
 		tour = append(tour, CallNode{

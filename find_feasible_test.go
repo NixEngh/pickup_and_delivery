@@ -22,9 +22,7 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		call := rand.Intn(problem.NumberOfCalls) + 1
 		indices := FindIndices(solution.Solution, call, 0)
-		callIndices := indices[call]
-		zeroIndices := indices[0]
-		callIndices = solution.MoveCallToOutsource(callIndices, zeroIndices)
+		indices = solution.MoveCallToOutsource(call, indices)
 		vehicle := rand.Intn(problem.NumberOfVehicles) + 1
 		tour := GetCallNodeTour(&problem, solution.Solution, vehicle)
 
@@ -41,19 +39,13 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 			a := movePickupTo.Index
 			moveDeliveryTo.Index = rand.Intn(len(tour)+1-a) + a + 1
 		}
-		//fmt.Println("Call: ", call)
-		//fmt.Println("Callindices: ", callIndices)
-		//fmt.Println(solution.Solution)
-		//fmt.Println("vehicle", vehicle)
-		//fmt.Println("Move to", movePickupTo.Index, moveDeliveryTo.Index)
 
 		insertAt := InsertionPoint{
 			pickupIndex:   movePickupTo,
 			deliveryIndex: moveDeliveryTo,
 		}
 
-		zeroIndices = FindIndices(solution.Solution, 0)[0]
-		solution.MoveCallToVehicle(callIndices, zeroIndices, insertAt)
+		solution.MoveCallToVehicle(call, indices, insertAt)
 		//fmt.Println("After move: ", solution.Solution)
 
 		newTour := GetCallNodeTour(&problem, solution.Solution, vehicle)
@@ -71,10 +63,6 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 	}
 }
 func TestCalculateTimeSlack(t *testing.T) {
-	// Testsolution:
-	// [1, 2, 1, 2, 0, 3, 3, 0]
-	// Time
-	// [1, 3, 4, 6]
 	s := Solution{}
 	s.VehicleCumulativeTimes = [][]int{
 		{1, 3, 4, 6},
@@ -99,97 +87,159 @@ func TestCalculateTimeSlack(t *testing.T) {
 }
 
 func TestFindFeasibleInsertion(t *testing.T) {
-	problem, err := LoadProblem("Data/Call_7_Vehicle_3.txt")
+	problem, err := LoadProblem("./Data/Call_18_Vehicle_5.txt")
 	if err != nil {
 		t.Errorf("Error loading problem")
 	}
-	generator := rand.New(rand.NewSource(1))
 
-	for testIndex := 0; testIndex < 1; testIndex++ {
-		var solution *Solution
-		for {
-			solution = problem.GenerateRandomSolution()
-			if solution.Feasible() {
-				break
+	var correctFeasible, correctInfeasible int
+	var falseFeasible, fakeInfeasible int
+	for testIndex := 0; testIndex < 20 ; testIndex++ {
+		var solution *Solution = problem.GenerateInitialSolution()
+		numberOfMoves := 100
+		for i := 0; i < numberOfMoves; i++ {
+			vehicleIndex := rand.Intn(problem.NumberOfVehicles) + 1
+
+			callNumber := rand.Intn(problem.NumberOfCalls) + 1
+			inds := FindIndices(solution.Solution, callNumber, 0)
+			inds = solution.MoveCallToOutsource(callNumber, inds)
+			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, callNumber)
+			if len(validIndices) == 0 {
+				continue
 			}
+			solution.InsertCall(callNumber, inds, validIndices[rand.Intn(len(validIndices))])
 		}
-		call := generator.Intn(problem.NumberOfCalls) + 1
-		//t.Log("Call: ", call)
+
+		call := rand.Intn(problem.NumberOfCalls) + 1
+        call = 10
 		indices := FindIndices(solution.Solution, 0, call)
-		zeroIndices := indices[0]
-		//t.Log("Solution: ", solution.Solution)
 
-		if indices[call][0] < zeroIndices[len(zeroIndices)-1] {
-			solution.MoveInSolution(indices[call][1], zeroIndices[len(zeroIndices)-1])
-			solution.MoveInSolution(indices[call][0], zeroIndices[len(zeroIndices)-1])
-			//t.Log("Moved call: ", solution.Solution)
-		}
-
-		zeroIndices = FindIndices(solution.Solution, 0)[0]
+        solution.MoveCallToOutsource(call, indices)
 
 		for vehicleIndex := 1; vehicleIndex < problem.NumberOfVehicles+1; vehicleIndex++ {
+            if vehicleIndex != 2 {continue}
+
 			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, call)
 			tour := GetCallNodeTour(&problem, solution.Solution, vehicleIndex)
 
-			callIndices := FindIndices(solution.Solution, call)[call]
-			pickupIndex := callIndices[0]
-			deliveryIndex := callIndices[1]
-
 			testSolution := solution.copy()
-			//t.Log("VehicleIndex: ", vehicleIndex)
 			for i := 0; i < len(tour)+1; i++ {
-				relative1 := RelativeIndex{
-					VehicleIndex: vehicleIndex,
-					Index:        i,
-				}
-				//t.Log("i: ", i)
-				testSolution.MoveRelativeToVehicle(pickupIndex, relative1)
-				//t.Log("solution after pickup moved: ", testSolution.Solution)
-				pickupIndex = relative1.toAbsolute(FindIndices(testSolution.Solution, 0)[0])
-				for j := i + 1; j < len(tour)+2; j++ {
-					//t.Log("j: ", j)
-					relative2 := RelativeIndex{
-						VehicleIndex: vehicleIndex,
-						Index:        j,
-					}
+				for j := i; j < len(tour)+1; j++ {
+                    inds := FindIndices(testSolution.Solution, call, 0)
+                    inds = testSolution.MoveCallToOutsource(call, inds)
 
-					testSolution.MoveRelativeToVehicle(deliveryIndex, relative2)
-					//t.Log("solution after delivery moved: ", testSolution.Solution)
-					deliveryIndex = relative2.toAbsolute(FindIndices(testSolution.Solution, 0)[0])
 					comparisonPoint := InsertionPoint{
-						pickupIndex:   relative1,
-						deliveryIndex: relative2,
+						pickupIndex:   RelativeIndex{VehicleIndex: vehicleIndex, Index: i},
+						deliveryIndex: RelativeIndex{VehicleIndex: vehicleIndex, Index: j},
 					}
-					if _, ok := slices.BinarySearchFunc(validIndices, comparisonPoint, func(a, t InsertionPoint) int {
+                    testSolution.InsertCall(call, inds, comparisonPoint)
 
+					if _, ok := slices.BinarySearchFunc(validIndices, comparisonPoint, func(a, t InsertionPoint) int {
 						if t.pickupIndex.Index == a.pickupIndex.Index {
-							return t.deliveryIndex.Index - a.deliveryIndex.Index
+							return a.deliveryIndex.Index - t.deliveryIndex.Index
 						}
-						return t.pickupIndex.Index - a.pickupIndex.Index
+						return a.pickupIndex.Index - t.pickupIndex.Index
 					}); ok {
 						if !testSolution.Feasible() {
-							t.Log("Call: ", call)
+							t.Log()
+							t.Error("Infeasible solution marked as feasible")
+							t.Log("Start solution: ", solution.Solution)
 							t.Log("Infeasible solution: ", testSolution.Solution)
+							t.Log("Vehicle: ", vehicleIndex)
+							t.Log("Call: ", call)
+							t.Log("valid indices: ", validIndices)
+							t.Log("Current indexes: ", i, j)
 							t.Log(GetTour(testSolution.Solution, vehicleIndex), " - tour")
+
+							t.Log("Capacities: ")
 							t.Log(testSolution.VehicleCumulativeCapacities[vehicleIndex], " - capacity")
-							t.Log(testSolution.VehicleCumulativeTimes[vehicleIndex], " - time")
 							SizeString := ""
 							for _, call := range GetTour(testSolution.Solution, vehicleIndex) {
 								SizeString += fmt.Sprintf("%d, ", problem.Calls[call].Size)
 							}
-                            vehicle := problem.Vehicles[vehicleIndex]
-                            t.Log("Vehiclecapacity: ", vehicle.Capacity)
-                            t.Log(SizeString, " - sizes")
-							t.Log("infeasibleReason:", testSolution.infeasiblereason)
+							t.Log(SizeString, " - sizes")
+							vehicle := problem.Vehicles[vehicleIndex]
+							t.Log("Vehiclecapacity: ", vehicle.Capacity)
+                            t.Log()
+							t.Log("Times: ")
+							t.Log(solution.VehicleCumulativeTimes[vehicleIndex], " - originaltimes")
+							t.Log(testSolution.VehicleCumulativeTimes[vehicleIndex], " - time")
+							t.Log("infeasibleReason:", testSolution.infeasibleReason)
 							t.Log("")
-							t.Error("Infeasible solution marked as feasible")
+							fakeInfeasible++
+						} else {
+							correctFeasible++
 						}
 					} else {
 						if testSolution.Feasible() {
+                            t.Log("################33")
+							t.Error("Feasible solution marked as infeasible")
+							t.Log("Start solution: ", solution.Solution)
 							t.Log("Feasible solution: ", testSolution.Solution)
-							t.Error("Feasible solution omitted")
+							t.Log("Vehicle: ", vehicleIndex)
+							t.Log("Call: ", call)
+							t.Log("valid indices: ", validIndices)
+							t.Log("Current index: ", i, j)
+							t.Log(GetTour(testSolution.Solution, vehicleIndex), " - tour")
+
+							t.Log("Capacities: ")
+							t.Log(testSolution.VehicleCumulativeCapacities[vehicleIndex], " - capacity")
+							SizeString := ""
+							for _, call := range GetTour(testSolution.Solution, vehicleIndex) {
+								SizeString += fmt.Sprintf("%d, ", problem.Calls[call].Size)
+							}
+							t.Log(SizeString, " - sizes")
+							vehicle := problem.Vehicles[vehicleIndex]
+							t.Log("Vehiclecapacity: ", vehicle.Capacity)
+
+                            t.Log()
+							t.Log("Times: ")
+							t.Log(solution.VehicleCumulativeTimes[vehicleIndex], " - originaltimes")
+                            t.Log(solution.CalulateTimeSlack(tour, vehicleIndex, 0), " - timeslack")
+
+                            UpperBounds := ""
+							for _, call := range GetCallNodeTour(&problem, solution.Solution, vehicleIndex) {
+								UpperBounds += fmt.Sprintf("%d, ", call.TimeWindow.UpperBound)
+							}
+							t.Log(UpperBounds, " - old upperbounds")
+							t.Log(testSolution.VehicleCumulativeTimes[vehicleIndex], " - newTimes")
+
+							t.Log("")
+							falseFeasible++
+						} else {
+							correctInfeasible++
 						}
 					}
+				}
+			}
+		}
+	}
+	t.Log("Correctly marked as feasible: ", correctFeasible)
+	t.Log("Correctly marked as infeasible: ", correctInfeasible)
+	t.Log("Incorrectly marked as feasible", fakeInfeasible)
+	t.Log("Incorrectly marked as infeasible", falseFeasible)
+}
+
+func TestGetCostImprovement(t *testing.T) {
+	problem, _ := LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	solution := problem.GenerateInitialSolution()
+	for i := 0; i < 100; i++ {
+		call := rand.Intn(problem.NumberOfCalls) + 1
+		indices := FindIndices(solution.Solution, 0, call)
+		indices = solution.MoveCallToOutsource(call, indices)
+
+		for vehicleIndex := 1; vehicleIndex <= problem.NumberOfVehicles; vehicleIndex++ {
+			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, call)
+			for _, insertionPoint := range validIndices {
+				testSolution := solution.copy()
+				testSolution.InsertCall(call, indices, insertionPoint)
+				if testSolution.Cost()-solution.Cost() != insertionPoint.costDiff {
+					t.Log("Originalcost: ", solution.Cost())
+					t.Log("Cost of new solution: ", testSolution.Cost())
+
+					t.Log("Real diff: ", solution.Cost()-testSolution.Cost())
+					t.Log("Stored Costdiff: ", insertionPoint.costDiff)
+					t.Error("Not equal")
 				}
 			}
 		}

@@ -2,10 +2,33 @@ package main
 
 import (
 	"math/rand"
+	"slices"
 )
 
 type operator interface {
 	apply(s *Solution)
+}
+
+type PlaceOptimallyInRandomVehicle struct{}
+
+func (o PlaceOptimallyInRandomVehicle) apply(s *Solution) {
+	vehicleIndex := rand.Intn(s.Problem.NumberOfVehicles) + 1
+	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
+
+	indices := FindIndices(s.Solution, 0, callIndex)
+	s.MoveCallToOutsource(callIndex, indices)
+
+	validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
+	slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
+		return b.costDiff - a.costDiff
+	})
+
+	if len(validIndices) == 0 {
+		return
+	}
+	insertionIndex := validIndices[0]
+	indices = FindIndices(s.Solution, 0, callIndex)
+	s.InsertCall(callIndex, indices, insertionIndex)
 }
 
 type PlaceOptimally struct {
@@ -14,12 +37,39 @@ type PlaceOptimally struct {
 
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
 func (o PlaceOptimally) apply(s *Solution) {
-	n_v_to_check := min(o.n_v_to_check, s.Problem.NumberOfVehicles)
-//	vecs := rand.Perm(s.Problem.NumberOfVehicles)
-
-	for i := 0; i < n_v_to_check; i++ {
-
+	var n_v_to_check int
+	if o.n_v_to_check == 0 {
+		n_v_to_check = s.Problem.NumberOfVehicles
 	}
+	n_v_to_check = min(n_v_to_check, s.Problem.NumberOfVehicles)
+	vecs := rand.Perm(s.Problem.NumberOfVehicles)
+
+	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
+
+	indices := FindIndices(s.Solution, 0, callIndex)
+	indices = s.MoveCallToOutsource(callIndex, indices)
+
+	bestInsertionPoint := InsertionPoint{}
+	for _, vehicleIndex := range vecs[:n_v_to_check] {
+		vehicleIndex = vehicleIndex + 1
+
+		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
+		slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
+			return a.costDiff - b.costDiff
+		})
+
+		if len(validIndices) == 0 {
+			continue
+		}
+		if validIndices[0].costDiff < bestInsertionPoint.costDiff {
+			bestInsertionPoint = validIndices[0]
+		}
+	}
+    if bestInsertionPoint.costDiff == 0 {
+        return
+    }
+
+	s.InsertCall(callIndex, indices, bestInsertionPoint)
 }
 
 type OldOneReinsert struct{}

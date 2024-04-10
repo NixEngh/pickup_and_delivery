@@ -120,7 +120,7 @@ func (s *Solution) UpdateFeasibility() {
 
 // Returns true if the vehicle is feasible
 func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
-    tour := GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
+	tour := GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
 
 	vehicle := s.Problem.Vehicles[vehicleIndex]
 	currentTime := vehicle.StartingTime
@@ -129,112 +129,49 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 
 	s.VehicleCumulativeTimes[vehicleIndex] = make([]int, len(tour))
 	s.VehicleCumulativeCapacities[vehicleIndex] = make([]int, len(tour))
-    openCount := 0
+	openCount := 0
 
 	for i, callNode := range tour {
 		// Checks
 		// Time
-        timeAfterPrev := currentTime + vehicle.TravelTimes[prevNode][callNode.Node]
+		timeAtCallNode := currentTime + vehicle.TravelTimes[prevNode][callNode.Node]
 
-		s.VehicleCumulativeTimes[vehicleIndex][i] = timeAfterPrev
+		s.VehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
 
-		if timeAfterPrev > callNode.TimeWindow.UpperBound {
-            s.infeasiblereason = fmt.Sprintf("The time %d at index %d was to high for call %d\n%v", timeAfterPrev, i, callNode.callIndex, s.VehicleCumulativeTimes[vehicleIndex])
+		if timeAtCallNode > callNode.TimeWindow.UpperBound {
+			s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, s.VehicleCumulativeTimes[vehicleIndex])
 			return false
 		}
 
-        size := s.Problem.Calls[callNode.callIndex].Size
-        if callNode.IsDelivery{
-            size = -size
-        }
+		size := s.Problem.Calls[callNode.callIndex].Size
+		if callNode.IsDelivery {
+			size = -size
+		}
 
 		currCap := vehicle.Capacity - (currentLoad + size)
 		s.VehicleCumulativeCapacities[vehicleIndex][i] = currCap
 
 		// Capacity
 		if currentLoad+size > vehicle.Capacity {
-            s.infeasiblereason = fmt.Sprintf("The capacity %d at index %d was to low for call %d with size %d", currCap, i, callNode.callIndex, s.Problem.Calls[callNode.callIndex].Size)
+			s.infeasibleReason = fmt.Sprintf("The capacity %d at index %d was too low for call %d with size %d", currCap, i, callNode.callIndex, s.Problem.Calls[callNode.callIndex].Size)
 			return false
 		}
 
 		// Prepare for next iteration
-        currentLoad += size
-        nodeTime := callNode.OperationTime
-        prevNode = callNode.Node
+		currentLoad += size
+		prevNode = callNode.Node
 
-		currentTime = max(timeAfterPrev, callNode.TimeWindow.LowerBound) + nodeTime
-        if !callNode.IsDelivery {
-            openCount += 1
-        } else {
-            openCount -= 1
-        }
+		currentTime = max(timeAtCallNode, callNode.TimeWindow.LowerBound) + callNode.OperationTime
+		if !callNode.IsDelivery {
+			openCount += 1
+		} else {
+			openCount -= 1
+		}
 	}
 
-    if openCount != 0 {
-        s.infeasiblereason = fmt.Sprintf("All calls weren't closed, openCount: %d", openCount)
-        return false
-    }
-
-	return true
-}
-func (s *Solution) OldIsVehicleFeasible(vehicleIndex int) bool {
-	found := make(map[int]struct{})
-	tour := GetTour(s.Solution, vehicleIndex)
-
-	vehicle := s.Problem.Vehicles[vehicleIndex]
-	currentTime := vehicle.StartingTime
-	currentLoad := 0
-	prevNode := vehicle.HomeNode
-
-	s.VehicleCumulativeTimes[vehicleIndex] = make([]int, len(tour))
-	s.VehicleCumulativeCapacities[vehicleIndex] = make([]int, len(tour))
-
-	for i, call := range tour {
-		_, isDelivery := found[call]
-		currentCall := s.Problem.Calls[call]
-
-		// Checks
-		// Time
-		var timeWindowToCheck TimeWindow
-		if !isDelivery {
-			timeWindowToCheck = currentCall.PickupTimeWindow
-		} else {
-			timeWindowToCheck = currentCall.DeliveryTimeWindow
-		}
-
-		var timeAfterPrev int
-		if !isDelivery {
-			timeAfterPrev = currentTime + vehicle.TravelTimes[prevNode][currentCall.OriginNode]
-		} else {
-			timeAfterPrev = currentTime + vehicle.TravelTimes[prevNode][currentCall.DestinationNode]
-		}
-		s.VehicleCumulativeTimes[vehicleIndex][i] = timeAfterPrev
-
-		if timeAfterPrev > timeWindowToCheck.UpperBound {
-			return false
-		}
-
-		currCap := vehicle.Capacity - currentLoad + currentCall.Size
-		s.VehicleCumulativeCapacities[vehicleIndex][i] = currCap
-		// Capacity
-		if !isDelivery && currentLoad+currentCall.Size > vehicle.Capacity {
-			return false
-		}
-
-		// Prepare for next iteration
-		var nodeTime int
-		if !isDelivery {
-			currentLoad += currentCall.Size
-			nodeTime = currentCall.OriginTimeForVehicle[vehicleIndex]
-			prevNode = currentCall.OriginNode
-		} else {
-			currentLoad -= currentCall.Size
-			nodeTime = currentCall.DestinationTimeForVehicle[vehicleIndex]
-			prevNode = currentCall.DestinationNode
-		}
-		currentTime = max(timeAfterPrev, timeWindowToCheck.LowerBound) + nodeTime
-
-		found[call] = struct{}{}
+	if openCount != 0 {
+		s.infeasibleReason = fmt.Sprintf("All calls weren't closed, openCount: %d", openCount)
+		return false
 	}
 
 	return true
