@@ -94,7 +94,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 
 	var correctFeasible, correctInfeasible int
 	var falseFeasible, fakeInfeasible int
-	for testIndex := 0; testIndex < 20 ; testIndex++ {
+	for testIndex := 0; testIndex < 200 ; testIndex++ {
 		var solution *Solution = problem.GenerateInitialSolution()
 		numberOfMoves := 100
 		for i := 0; i < numberOfMoves; i++ {
@@ -111,7 +111,6 @@ func TestFindFeasibleInsertion(t *testing.T) {
 		}
 
 		call := rand.Intn(problem.NumberOfCalls) + 1
-        call = 10
 		indices := FindIndices(solution.Solution, 0, call)
 
         solution.MoveCallToOutsource(call, indices)

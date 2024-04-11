@@ -76,6 +76,7 @@ func (r *RelativeIndex) toAbsolute(zeroIndices []int) int {
 type InsertionPoint struct {
 	pickupIndex   RelativeIndex
 	deliveryIndex RelativeIndex
+    // Negative values are good
 	costDiff      int
 }
 

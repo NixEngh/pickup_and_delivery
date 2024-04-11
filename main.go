@@ -24,8 +24,11 @@ func main() {
 	algorithms := map[string]algorithm{
         //"0_Random_Search":       RandomSearch,
         //"1_Local_Search":        LocalSearch,
-		//"2_Simulated_Annealing": SimulatedAnnealing,
-        "3_Assignment_4_1": Assignment_4_1,
+        //"2_Simulated_Annealing": Assignment3(),
+        "3_Equal": EqualProbability(),
+        "4_Moderate": Moderate(),
+        "5_Adventurous": Adventurous(),
+        "6_Intense": Intense(),
     }
 
 	improvements := make(map[string]float64)

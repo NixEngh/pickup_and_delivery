@@ -124,11 +124,11 @@ func (s *Solution) MoveInSolution(from int, to int) {
 // Move to a position in a vehicle from [0, len(tour)+1>
 func (s *Solution) MoveRelativeToVehicle(from int, newIndex RelativeIndex) {
 	tourIndices := GetTourIndices(s.Solution, newIndex.VehicleIndex)
-    tour := GetTour(s.Solution, newIndex.VehicleIndex)
+	tour := GetTour(s.Solution, newIndex.VehicleIndex)
 
 	if tourIndices[0] == tourIndices[1] {
 		if newIndex.Index != 0 {
-            fmt.Println(tour)
+			fmt.Println(tour)
 			panic("Index out of bounds")
 		}
 		s.MoveInSolution(from, tourIndices[0])
@@ -156,7 +156,7 @@ func (s *Solution) InsertCall(callNumber int, inds map[int][]int, insertionPoint
 	}
 	insertionPoint.deliveryIndex.Index += 1
 	s.MoveRelativeToVehicle(deliveryInd, insertionPoint.deliveryIndex)
-    
+
 }
 
 func (s *Solution) MoveCallToVehicle(callNumber int, inds map[int][]int, insertionPoint InsertionPoint) {
@@ -180,6 +180,28 @@ func (s *Solution) MoveCallToOutsource(callNumber int, inds map[int][]int) (newI
 
 	newInds = FindIndices(s.Solution, 0, callNumber)
 	return newInds
+}
+
+func (s *Solution) placeCallRandomly(callNumber int) bool {
+	inds := FindIndices(s.Solution, callNumber, 0)
+
+	inds = s.MoveCallToOutsource(callNumber, inds)
+	possibleVehicles := s.Problem.CallVehicleMap[callNumber]
+
+	feasibleInsertions := make([]InsertionPoint, 0)
+
+	for _, vehicleIndex := range possibleVehicles {
+		currentInsertions := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
+		feasibleInsertions = append(feasibleInsertions, currentInsertions...)
+	}
+
+	if len(feasibleInsertions) == 0 {
+		return false
+	}
+	pick := rand.Intn(len(feasibleInsertions))
+
+	s.InsertCall(callNumber, inds, feasibleInsertions[pick])
+	return true
 }
 
 // Creates a copy of the solution

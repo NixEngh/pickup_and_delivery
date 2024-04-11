@@ -3,17 +3,20 @@ package main
 import (
 	"math/rand"
 	"slices"
+	"sync"
 )
 
-type operator interface {
+type Operator interface {
 	apply(s *Solution)
 }
 
 type PlaceOptimallyInRandomVehicle struct{}
 
 func (o PlaceOptimallyInRandomVehicle) apply(s *Solution) {
-	vehicleIndex := rand.Intn(s.Problem.NumberOfVehicles) + 1
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
+	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
+
+	vehicleIndex := possibleVehicles[rand.Intn(len(possibleVehicles))]
 
 	indices := FindIndices(s.Solution, 0, callIndex)
 	s.MoveCallToOutsource(callIndex, indices)
@@ -31,45 +34,77 @@ func (o PlaceOptimallyInRandomVehicle) apply(s *Solution) {
 	s.InsertCall(callIndex, indices, insertionIndex)
 }
 
-type PlaceOptimally struct {
-	n_v_to_check int
-}
+type PlaceOptimally struct{}
 
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
 func (o PlaceOptimally) apply(s *Solution) {
-	var n_v_to_check int
-	if o.n_v_to_check == 0 {
-		n_v_to_check = s.Problem.NumberOfVehicles
-	}
-	n_v_to_check = min(n_v_to_check, s.Problem.NumberOfVehicles)
-	vecs := rand.Perm(s.Problem.NumberOfVehicles)
-
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
+
+	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
 	indices := FindIndices(s.Solution, 0, callIndex)
 	indices = s.MoveCallToOutsource(callIndex, indices)
 
+	var wg = sync.WaitGroup{}
+	insertionPoints := make(chan InsertionPoint)
+
+	for _, vehicleIndex := range possibleVehicles {
+		wg.Add(1)
+		go func(vehicleIndex int) {
+			defer wg.Done()
+			validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
+			slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
+				return a.costDiff - b.costDiff
+			})
+
+			if len(validIndices) == 0 {
+				return
+			}
+			insertionPoints <- validIndices[0]
+		}(vehicleIndex)
+	}
+
+	go func() {
+		wg.Wait()
+		close(insertionPoints)
+	}()
+
 	bestInsertionPoint := InsertionPoint{}
-	for _, vehicleIndex := range vecs[:n_v_to_check] {
-		vehicleIndex = vehicleIndex + 1
 
-		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
-		slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
-			return a.costDiff - b.costDiff
-		})
-
-		if len(validIndices) == 0 {
-			continue
-		}
-		if validIndices[0].costDiff < bestInsertionPoint.costDiff {
-			bestInsertionPoint = validIndices[0]
+	for point := range insertionPoints {
+		if point.costDiff < bestInsertionPoint.costDiff {
+			bestInsertionPoint = point
 		}
 	}
-    if bestInsertionPoint.costDiff == 0 {
-        return
-    }
+
+	if bestInsertionPoint.costDiff == 0 {
+		return
+	}
 
 	s.InsertCall(callIndex, indices, bestInsertionPoint)
+}
+
+type PlaceRandomly struct{}
+
+func (o PlaceRandomly) apply(s *Solution) {
+	callNumber := rand.Intn(s.Problem.NumberOfCalls) + 1
+	s.placeCallRandomly(callNumber)
+}
+
+type PlaceFiveCallsRandomly struct{}
+
+func (o PlaceFiveCallsRandomly) apply(s *Solution) {
+	callsToMove := rand.Perm(s.Problem.NumberOfCalls)
+	count := 0
+	for _, callToMove := range callsToMove {
+		if ok := s.placeCallRandomly(callToMove + 1); ok {
+			count += 1
+		}
+
+		if count == 5 {
+			break
+		}
+	}
 }
 
 type OldOneReinsert struct{}
@@ -93,7 +128,9 @@ func (o OldOneReinsert) apply(s *Solution) {
 		return
 	}
 
-	vehicle := rand.Intn(s.Problem.NumberOfVehicles) + 1
+	possibleVehicles := s.Problem.CallVehicleMap[call]
+
+	vehicle := possibleVehicles[rand.Intn(len(possibleVehicles))]
 
 	vehicle_range_start := 0
 	vehicle_range_end := 0
@@ -148,3 +185,39 @@ func (o OldOneReinsert) moveCallInVehicle(s *Solution, callInds, zeroInds []int)
 
 	return false
 }
+
+type OperatorPolicy interface {
+	ChooseOperator() Operator
+	Name() string
+}
+
+type OperatorProbability struct {
+	operator    Operator
+	probability float64
+}
+
+type ChooseRandomOperator struct {
+	operators []OperatorProbability
+	name      string
+}
+
+func (c *ChooseRandomOperator) ChooseOperator() Operator {
+	var total float64
+	for _, op := range c.operators {
+		total += op.probability
+	}
+
+	r := rand.Float64() * total
+	for _, op := range c.operators {
+		if r -= op.probability; r < 0 {
+			return op.operator
+		}
+	}
+
+	panic("Should not reach here")
+}
+
+func (c *ChooseRandomOperator) Name() string {
+    return c.name
+}
+

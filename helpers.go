@@ -13,8 +13,8 @@ import (
 
 func FindIndices[T comparable](slice []T, values ...T) map[T][]int {
 	indicesMap := make(map[T][]int)
-	for _, value := range values {
-		for index, element := range slice {
+    for index, element := range slice {
+        for _, value := range values {
 			if element == value {
 				indicesMap[value] = append(indicesMap[value], index)
 			}
