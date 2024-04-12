@@ -94,11 +94,11 @@ type Solution struct {
 	Problem                *Problem
 	Solution               []int
 	VehicleCost            []int
-	VehicleCumulativeCosts [][]int
+	vehicleCumulativeCosts [][]int
 	// Contains the leftover capacity after each callnode
-	VehicleCumulativeCapacities [][]int
+	vehicleCumulativeCapacities [][]int
 	// For an index, contains the arrival time at that node
-	VehicleCumulativeTimes     [][]int
+	vehicleCumulativeTimes     [][]int
 	OutSourceCost              int
 	VehiclesToCheckCost        map[int]bool
 	VehiclesToCheckFeasibility map[int]bool

@@ -5,7 +5,7 @@ import (
 )
 
 // Iterate backwards and calculate how much time an insert can take without violating time feasibility. The slack at index i is the maximum time that can be added before index i without violating the time window constraints
-func (s *Solution) CalulateTimeSlack(tour []CallNode, vehicleIndex int, startIndex int) []int {
+func (s *Solution) CalulateTimeSlack(tour []CallNode, vehicleIndex int) []int {
 	s.Feasible()
 	if len(tour) == 0 {
 		return []int{}
@@ -17,10 +17,10 @@ func (s *Solution) CalulateTimeSlack(tour []CallNode, vehicleIndex int, startInd
 	var currentTime int
 	var firstIteration bool = true
 
-	for i := len(tour) - 1; i >= startIndex; i-- {
+	for i := len(tour) - 1; i >= 0; i-- {
 		currentNode := tour[i]
 
-		currentTime = s.VehicleCumulativeTimes[vehicleIndex][i]
+		currentTime = s.VehicleCumulativeTimes(vehicleIndex)[i]
 		constraint := currentNode.TimeWindow.UpperBound - max(currentTime, currentNode.TimeWindow.LowerBound)
 		waitTime := max(0, currentNode.TimeWindow.LowerBound-currentTime)
 
@@ -42,7 +42,7 @@ func (s *Solution) checkCapacityConstraint(call Call, insertAt InsertionPoint) b
 	vehicleIndex := insertAt.pickupIndex.VehicleIndex
 	vehicle := s.Problem.Vehicles[vehicleIndex]
 
-	cumulativeCaps := s.VehicleCumulativeCapacities[vehicleIndex]
+	cumulativeCaps := s.VehicleCumulativeCapacities(vehicleIndex)
 
 	prevCap := vehicle.Capacity
 	if insertAt.deliveryIndex.Index > 0 {
@@ -65,7 +65,7 @@ func (s *Solution) checkPickupTimeConstraint(callNode CallNode, tour []CallNode,
 	if insertAt.Index > 0 {
 		prevCallNode := tour[insertAt.Index-1]
 		prevNode = prevCallNode.Node
-		prevTime = max(prevCallNode.TimeWindow.LowerBound, s.VehicleCumulativeTimes[vehicle.Index][insertAt.Index-1]) + prevCallNode.OperationTime
+		prevTime = max(prevCallNode.TimeWindow.LowerBound, s.VehicleCumulativeTimes(vehicle.Index)[insertAt.Index-1]) + prevCallNode.OperationTime
 	}
 
 	timeAtInsertedNode := prevTime + vehicle.TravelTimes[prevNode][callNode.Node]
@@ -78,7 +78,7 @@ func (s *Solution) checkPickupTimeConstraint(callNode CallNode, tour []CallNode,
 
 	if insertAt.Index < len(tour) {
 		nextNode := tour[insertAt.Index]
-		originalTimeAtNextNode := s.VehicleCumulativeTimes[insertAt.VehicleIndex][insertAt.Index]
+		originalTimeAtNextNode := s.VehicleCumulativeTimes(insertAt.VehicleIndex)[insertAt.Index]
 
 		timeAtNextNode = max(timeAtInsertedNode, callNode.TimeWindow.LowerBound) + callNode.OperationTime + vehicle.TravelTimes[callNode.Node][nextNode.Node]
 
@@ -103,7 +103,7 @@ func (s *Solution) handleConsecutiveInsertion(call Call, tour []CallNode, insert
 
 	if insertAt.Index > 0 {
 		prevNodeCall := tour[insertAt.Index-1]
-		prevTime = max(s.VehicleCumulativeTimes[insertAt.VehicleIndex][insertAt.Index-1], prevNodeCall.TimeWindow.LowerBound)
+		prevTime = max(s.VehicleCumulativeTimes(insertAt.VehicleIndex)[insertAt.Index-1], prevNodeCall.TimeWindow.LowerBound)
 		prevTime += prevNodeCall.OperationTime
 
 		prevNode = prevNodeCall.Node
@@ -129,7 +129,7 @@ func (s *Solution) handleConsecutiveInsertion(call Call, tour []CallNode, insert
 
 		time += vehicle.TravelTimes[deliveryNode.Node][nextNode.Node]
 
-		originalTime := s.VehicleCumulativeTimes[vehicle.Index][insertAt.Index]
+		originalTime := s.VehicleCumulativeTimes(vehicle.Index)[insertAt.Index]
 
 		timeDiff := time - originalTime
 
@@ -146,10 +146,6 @@ func (s *Solution) handleConsecutiveInsertion(call Call, tour []CallNode, insert
 
 func (s *Solution) checkDeliveryTimeConstraint(call Call, tour []CallNode, insertAt InsertionPoint, arrivalAtPreviousNode int, timeSlack []int) (passed bool, arrivalAtNextNode int) {
 	s.Feasible()
-
-	if insertAt.pickupIndex.Index == insertAt.deliveryIndex.Index {
-		return s.handleConsecutiveInsertion(call, tour, insertAt.pickupIndex, timeSlack), arrivalAtPreviousNode
-	}
 
 	vehicle := s.Problem.Vehicles[insertAt.pickupIndex.VehicleIndex]
 	prevNode := tour[insertAt.deliveryIndex.Index-1]
@@ -170,7 +166,7 @@ func (s *Solution) checkDeliveryTimeConstraint(call Call, tour []CallNode, inser
 			deliveryNode.OperationTime +
 			vehicle.TravelTimes[deliveryNode.Node][nextNode.Node]
 
-		timeDiff := arrivalAtNextNodeWithDelivery - s.VehicleCumulativeTimes[vehicle.Index][insertAt.deliveryIndex.Index]
+		timeDiff := arrivalAtNextNodeWithDelivery - s.VehicleCumulativeTimes(vehicle.Index)[insertAt.deliveryIndex.Index]
 		if timeDiff > timeSlack[insertAt.deliveryIndex.Index] {
 			return false, 0
 		}
@@ -246,7 +242,7 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []Ins
 	pickupNode := call.GetCallNode(false, vehicleIndex)
 
 	tour := GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
-	timeSlack := s.CalulateTimeSlack(tour, vehicleIndex, 0)
+	timeSlack := s.CalulateTimeSlack(tour, vehicleIndex)
 
 	for i := 0; i < len(tour)+1; i++ {
 		pickupPassed, arrivalAtNextNode := s.checkPickupTimeConstraint(pickupNode, tour, RelativeIndex{VehicleIndex: vehicleIndex, Index: i}, timeSlack)

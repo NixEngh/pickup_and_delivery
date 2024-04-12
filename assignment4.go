@@ -2,65 +2,65 @@ package main
 
 func EqualProbability() algorithm {
 	policy := &ChooseRandomOperator{
-		operators: []OperatorProbability{
-            {PlaceOptimally{}, 1},
-			{PlaceOptimallyInRandomVehicle{}, 1},
-            {PlaceRandomly{}, 1},
-            {PlaceFiveCallsRandomly{}, 1},
+		operators: []OperatorScore{
+			{operator: PlaceOptimally{}, probability: 1},
+			{operator: PlaceOptimallyInRandomVehicle{}, probability: 1},
+			{operator: PlaceRandomly{}, probability: 1},
+			{operator: PlaceFiveCallsRandomly{}, probability: 1},
 		},
-        name: "Equal Probability",
+		name: "Equal Probability",
 	}
-    return SimulatedAnnealing(policy)
+	return SimulatedAnnealing(policy)
 }
 
 func Moderate() algorithm {
 	policy := &ChooseRandomOperator{
-		operators: []OperatorProbability{
-            {PlaceOptimally{}, 1},
-			{PlaceOptimallyInRandomVehicle{}, 2},
-            {PlaceRandomly{}, 2},
-            {PlaceFiveCallsRandomly{}, 1},
+		operators: []OperatorScore{
+			{operator: PlaceOptimally{}, probability: 1},
+			{operator: PlaceOptimallyInRandomVehicle{}, probability: 2},
+			{operator: PlaceRandomly{}, probability: 2},
+			{operator: PlaceFiveCallsRandomly{}, probability: 1},
 		},
-        name: "Moderate",
+		name: "Moderate",
 	}
-    return SimulatedAnnealing(policy)
+	return SimulatedAnnealing(policy)
 }
 
 func Adventurous() algorithm {
 	policy := &ChooseRandomOperator{
-		operators: []OperatorProbability{
-            {PlaceOptimally{}, 1},
-			{PlaceOptimallyInRandomVehicle{}, 1},
-            {PlaceRandomly{}, 2},
-            {PlaceFiveCallsRandomly{}, 2},
+		operators: []OperatorScore{
+			{operator: PlaceOptimally{}, probability: 1},
+			{operator: PlaceOptimallyInRandomVehicle{}, probability: 1},
+			{operator: PlaceRandomly{}, probability: 2},
+			{operator: PlaceFiveCallsRandomly{}, probability: 2},
 		},
-        name: "Adventurous",
+		name: "Adventurous",
 	}
-    return SimulatedAnnealing(policy)
+	return SimulatedAnnealing(policy)
 }
 
 func Intense() algorithm {
 	policy := &ChooseRandomOperator{
-		operators: []OperatorProbability{
-            {PlaceOptimally{}, 2},
-			{PlaceOptimallyInRandomVehicle{}, 2},
-            {PlaceRandomly{}, 1},
-            {PlaceFiveCallsRandomly{}, 1},
+		operators: []OperatorScore{
+			{operator: PlaceOptimally{}, probability: 2},
+			{operator: PlaceOptimallyInRandomVehicle{}, probability: 2},
+			{operator: PlaceRandomly{}, probability: 1},
+			{operator: PlaceFiveCallsRandomly{}, probability: 1},
 		},
-        name: "Intense",
+		name: "Intense",
 	}
-    return SimulatedAnnealing(policy)
+	return SimulatedAnnealing(policy)
 }
 
 func Extreme() algorithm {
 	policy := &ChooseRandomOperator{
-		operators: []OperatorProbability{
-            {PlaceOptimally{}, 2},
-			{PlaceOptimallyInRandomVehicle{}, 1},
-            {PlaceRandomly{}, 1},
-            {PlaceFiveCallsRandomly{}, 2},
+		operators: []OperatorScore{
+			{operator: PlaceOptimally{}, probability: 2},
+			{operator: PlaceOptimallyInRandomVehicle{}, probability: 1},
+			{operator: PlaceRandomly{}, probability: 1},
+			{operator: PlaceFiveCallsRandomly{}, probability: 2},
 		},
-        name: "Extreme",
+		name: "Extreme",
 	}
-    return SimulatedAnnealing(policy)
+	return SimulatedAnnealing(policy)
 }

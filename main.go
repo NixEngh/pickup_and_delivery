@@ -25,10 +25,12 @@ func main() {
         //"0_Random_Search":       RandomSearch,
         //"1_Local_Search":        LocalSearch,
         //"2_Simulated_Annealing": Assignment3(),
-        "3_Equal": EqualProbability(),
-        "4_Moderate": Moderate(),
-        "5_Adventurous": Adventurous(),
-        "6_Intense": Intense(),
+        //"3_Equal": EqualProbability(),
+        //"4_Moderate": Moderate(),
+        //"5_Adventurous": Adventurous(),
+        //"6_Intense": Intense(),
+        //"7_Extreme": Extreme(),
+        "8_adaptive": Adaptive(),
     }
 
 	improvements := make(map[string]float64)

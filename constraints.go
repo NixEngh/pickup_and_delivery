@@ -2,6 +2,27 @@ package main
 
 import "fmt"
 
+func (s *Solution) VehicleCumulativeCapacities(vehicleIndex int) []int {
+	if _, ok := s.VehiclesToCheckFeasibility[vehicleIndex]; ok {
+		s.UpdateFeasibility()
+	}
+	return s.vehicleCumulativeCapacities[vehicleIndex]
+}
+
+func (s *Solution) VehicleCumulativeTimes(vehicleIndex int) []int {
+	if _, ok := s.VehiclesToCheckFeasibility[vehicleIndex]; ok {
+		s.UpdateFeasibility()
+	}
+	return s.vehicleCumulativeTimes[vehicleIndex]
+}
+
+func (s *Solution) VehicleCumulativeCosts(vehicleIndex int) []int {
+	if _, ok := s.VehiclesToCheckCost[vehicleIndex]; ok {
+		s.UpdateCosts()
+	}
+	return s.vehicleCumulativeCosts[vehicleIndex]
+}
+
 // Updates (if relevant) and returns the cost of the solution
 func (s *Solution) Cost() int {
 	if len(s.VehiclesToCheckCost) == 0 {
@@ -73,7 +94,7 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 	total := 0
 	previousNode := vehicle.HomeNode
 
-	s.VehicleCumulativeCosts[vehicleIndex] = make([]int, len(tour))
+	s.vehicleCumulativeCosts[vehicleIndex] = make([]int, len(tour))
 
 	for i, call := range tour {
 		_, isDelivery := found[call]
@@ -88,7 +109,7 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 			total += currentCall.DestinationCostForVehicle[vehicleIndex]
 			previousNode = currentCall.DestinationNode
 		}
-		s.VehicleCumulativeCosts[vehicleIndex][i] = total
+		s.vehicleCumulativeCosts[vehicleIndex][i] = total
 		found[call] = struct{}{}
 	}
 
@@ -127,8 +148,8 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 	currentLoad := 0
 	prevNode := vehicle.HomeNode
 
-	s.VehicleCumulativeTimes[vehicleIndex] = make([]int, len(tour))
-	s.VehicleCumulativeCapacities[vehicleIndex] = make([]int, len(tour))
+	s.vehicleCumulativeTimes[vehicleIndex] = make([]int, len(tour))
+	s.vehicleCumulativeCapacities[vehicleIndex] = make([]int, len(tour))
 	openCount := 0
 
 	for i, callNode := range tour {
@@ -136,10 +157,10 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		// Time
 		timeAtCallNode := currentTime + vehicle.TravelTimes[prevNode][callNode.Node]
 
-		s.VehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
+		s.vehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
 
 		if timeAtCallNode > callNode.TimeWindow.UpperBound {
-			s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, s.VehicleCumulativeTimes[vehicleIndex])
+			s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, s.vehicleCumulativeTimes[vehicleIndex])
 			return false
 		}
 
@@ -149,7 +170,7 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		}
 
 		currCap := vehicle.Capacity - (currentLoad + size)
-		s.VehicleCumulativeCapacities[vehicleIndex][i] = currCap
+		s.vehicleCumulativeCapacities[vehicleIndex][i] = currCap
 
 		// Capacity
 		if currentLoad+size > vehicle.Capacity {

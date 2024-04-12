@@ -1,18 +1,19 @@
 package main
 
 import (
+	"math"
 	"math/rand"
 	"slices"
 	"sync"
 )
 
 type Operator interface {
-	apply(s *Solution)
+	Apply(s *Solution) int
 }
 
 type PlaceOptimallyInRandomVehicle struct{}
 
-func (o PlaceOptimallyInRandomVehicle) apply(s *Solution) {
+func (o PlaceOptimallyInRandomVehicle) Apply(s *Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
@@ -27,17 +28,60 @@ func (o PlaceOptimallyInRandomVehicle) apply(s *Solution) {
 	})
 
 	if len(validIndices) == 0 {
-		return
+		return math.MaxInt32
 	}
 	insertionIndex := validIndices[0]
 	indices = FindIndices(s.Solution, 0, callIndex)
 	s.InsertCall(callIndex, indices, insertionIndex)
+
+	return s.Cost()
 }
 
 type PlaceOptimally struct{}
 
+func (o PlaceOptimally) Apply(s *Solution) int {
+	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
+
+	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
+
+	indices := FindIndices(s.Solution, 0, callIndex)
+
+	indices = s.MoveCallToOutsource(callIndex, indices)
+
+	insertionPoints := make([]InsertionPoint, 0)
+
+	for _, vehicleIndex := range possibleVehicles {
+		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
+		slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
+			return a.costDiff - b.costDiff
+		})
+
+		if len(validIndices) == 0 {
+			continue
+		}
+		insertionPoints = append(insertionPoints, validIndices[0])
+	}
+
+	bestInsertionPoint := InsertionPoint{}
+
+	for _, point := range insertionPoints {
+		if point.costDiff < bestInsertionPoint.costDiff {
+
+			bestInsertionPoint = point
+		}
+	}
+
+	if bestInsertionPoint.costDiff == 0 {
+		return math.MaxInt32
+	}
+
+	s.InsertCall(callIndex, indices, bestInsertionPoint)
+
+	return s.Cost()
+}
+
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
-func (o PlaceOptimally) apply(s *Solution) {
+func (o PlaceOptimally) ApplyWithConcurrency(s *Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
@@ -78,22 +122,25 @@ func (o PlaceOptimally) apply(s *Solution) {
 	}
 
 	if bestInsertionPoint.costDiff == 0 {
-		return
+		return math.MaxInt32
 	}
 
 	s.InsertCall(callIndex, indices, bestInsertionPoint)
+
+	return s.Cost()
 }
 
 type PlaceRandomly struct{}
 
-func (o PlaceRandomly) apply(s *Solution) {
+func (o PlaceRandomly) Apply(s *Solution) int {
 	callNumber := rand.Intn(s.Problem.NumberOfCalls) + 1
 	s.placeCallRandomly(callNumber)
+	return s.Cost()
 }
 
 type PlaceFiveCallsRandomly struct{}
 
-func (o PlaceFiveCallsRandomly) apply(s *Solution) {
+func (o PlaceFiveCallsRandomly) Apply(s *Solution) int {
 	callsToMove := rand.Perm(s.Problem.NumberOfCalls)
 	count := 0
 	for _, callToMove := range callsToMove {
@@ -105,18 +152,19 @@ func (o PlaceFiveCallsRandomly) apply(s *Solution) {
 			break
 		}
 	}
+	return s.Cost()
 }
 
 type OldOneReinsert struct{}
 
-func (o OldOneReinsert) apply(s *Solution) {
+func (o OldOneReinsert) Apply(s *Solution) int {
 	move_in_vehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	inds := FindIndices(s.Solution, call, 0)
 	if move_in_vehicle {
 		o.moveCallInVehicle(s, inds[call], inds[0])
-		return
+		return s.Cost()
 	}
 
 	zeroinds := inds[0]
@@ -125,7 +173,7 @@ func (o OldOneReinsert) apply(s *Solution) {
 	if callinds[1] < zeroinds[len(zeroinds)-1] {
 		s.MoveInSolution(callinds[1], zeroinds[len(zeroinds)-1])
 		s.MoveInSolution(callinds[0], zeroinds[len(zeroinds)-1])
-		return
+		return s.Cost()
 	}
 
 	possibleVehicles := s.Problem.CallVehicleMap[call]
@@ -144,14 +192,14 @@ func (o OldOneReinsert) apply(s *Solution) {
 	if vehicle_range_end-vehicle_range_start < 2 {
 		s.MoveInSolution(callinds[0], vehicle_range_end)
 		s.MoveInSolution(callinds[1], vehicle_range_end)
-		return
+		return s.Cost()
 	}
 	insert_index := rand.Intn(vehicle_range_end-(vehicle_range_start+1)) + vehicle_range_start + 1
 
 	s.MoveInSolution(callinds[0], insert_index)
 	s.MoveInSolution(callinds[1], insert_index)
 
-	return
+	return s.Cost()
 }
 
 func (o OldOneReinsert) moveCallInVehicle(s *Solution, callInds, zeroInds []int) bool {
@@ -185,39 +233,3 @@ func (o OldOneReinsert) moveCallInVehicle(s *Solution, callInds, zeroInds []int)
 
 	return false
 }
-
-type OperatorPolicy interface {
-	ChooseOperator() Operator
-	Name() string
-}
-
-type OperatorProbability struct {
-	operator    Operator
-	probability float64
-}
-
-type ChooseRandomOperator struct {
-	operators []OperatorProbability
-	name      string
-}
-
-func (c *ChooseRandomOperator) ChooseOperator() Operator {
-	var total float64
-	for _, op := range c.operators {
-		total += op.probability
-	}
-
-	r := rand.Float64() * total
-	for _, op := range c.operators {
-		if r -= op.probability; r < 0 {
-			return op.operator
-		}
-	}
-
-	panic("Should not reach here")
-}
-
-func (c *ChooseRandomOperator) Name() string {
-    return c.name
-}
-

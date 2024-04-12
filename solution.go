@@ -24,9 +24,9 @@ func (p *Problem) GenerateInitialSolution() *Solution {
 		OutSourceCost:               0,
 		VehiclesToCheckCost:         make(map[int]bool, 0),
 		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
-		VehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
-		VehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
-		VehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
 		cost:                        0,
 		feasible:                    true,
 	}
@@ -72,9 +72,9 @@ func (p *Problem) GenerateRandomSolution() *Solution {
 		OutSourceCost:               0,
 		VehiclesToCheckCost:         make(map[int]bool, 0),
 		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
-		VehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
-		VehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
-		VehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
+		vehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
 	}
 
 	for i := 1; i <= p.NumberOfVehicles; i++ {
@@ -222,22 +222,22 @@ func (s *Solution) copy() *Solution {
 		feasVehicles[vehicle] = true
 	}
 
-	copyVehicleCumulativeCosts := make([][]int, len(s.VehicleCumulativeCosts))
-	for i := range s.VehicleCumulativeCosts {
-		copyVehicleCumulativeCosts[i] = make([]int, len(s.VehicleCumulativeCosts[i]))
-		copy(copyVehicleCumulativeCosts[i], s.VehicleCumulativeCosts[i])
+	copyVehicleCumulativeCosts := make([][]int, len(s.vehicleCumulativeCosts))
+	for i := range s.vehicleCumulativeCosts {
+		copyVehicleCumulativeCosts[i] = make([]int, len(s.vehicleCumulativeCosts[i]))
+		copy(copyVehicleCumulativeCosts[i], s.vehicleCumulativeCosts[i])
 	}
 
-	copyVehicleCumulativeCapacities := make([][]int, len(s.VehicleCumulativeCapacities))
-	for i := range s.VehicleCumulativeCapacities {
-		copyVehicleCumulativeCapacities[i] = make([]int, len(s.VehicleCumulativeCapacities[i]))
-		copy(copyVehicleCumulativeCapacities[i], s.VehicleCumulativeCapacities[i])
+	copyVehicleCumulativeCapacities := make([][]int, len(s.vehicleCumulativeCapacities))
+	for i := range s.vehicleCumulativeCapacities {
+		copyVehicleCumulativeCapacities[i] = make([]int, len(s.vehicleCumulativeCapacities[i]))
+		copy(copyVehicleCumulativeCapacities[i], s.vehicleCumulativeCapacities[i])
 	}
 
-	copyVehicleCumulativeTimes := make([][]int, len(s.VehicleCumulativeTimes))
-	for i := range s.VehicleCumulativeTimes {
-		copyVehicleCumulativeTimes[i] = make([]int, len(s.VehicleCumulativeTimes[i]))
-		copy(copyVehicleCumulativeTimes[i], s.VehicleCumulativeTimes[i])
+	copyVehicleCumulativeTimes := make([][]int, len(s.vehicleCumulativeTimes))
+	for i := range s.vehicleCumulativeTimes {
+		copyVehicleCumulativeTimes[i] = make([]int, len(s.vehicleCumulativeTimes[i]))
+		copy(copyVehicleCumulativeTimes[i], s.vehicleCumulativeTimes[i])
 	}
 
 	return &Solution{
@@ -247,9 +247,9 @@ func (s *Solution) copy() *Solution {
 		OutSourceCost:               s.OutSourceCost,
 		VehiclesToCheckCost:         costVehicles,
 		VehiclesToCheckFeasibility:  feasVehicles,
-		VehicleCumulativeCosts:      copyVehicleCumulativeCosts,
-		VehicleCumulativeCapacities: copyVehicleCumulativeCapacities,
-		VehicleCumulativeTimes:      copyVehicleCumulativeTimes,
+		vehicleCumulativeCosts:      copyVehicleCumulativeCosts,
+		vehicleCumulativeCapacities: copyVehicleCumulativeCapacities,
+		vehicleCumulativeTimes:      copyVehicleCumulativeTimes,
 		feasible:                    s.feasible,
 		cost:                        s.cost,
 	}

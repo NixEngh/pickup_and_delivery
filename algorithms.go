@@ -32,7 +32,7 @@ func LocalSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
 	feasibleCount := 0
 	for i := 0; i < 10000; i++ {
 		PrintLoadingBar(i, 10000, 50)
-		operator.apply(bestSolution)
+		operator.Apply(bestSolution)
 
 		if bestSolution.Feasible() {
 			feasibleCount++
@@ -63,8 +63,7 @@ func SimulatedAnnealing(operatorPolicy OperatorPolicy) algorithm {
 		for i := 0; i < 100; i++ {
 			PrintLoadingBar(i, 100, 50)
 			neighbor := incubent.copy()
-            Operator := operatorPolicy.ChooseOperator()
-			Operator.apply(neighbor)
+            operatorPolicy.Apply(neighbor)
 
 			neighborCost := neighbor.Cost()
 			deltaE := neighborCost - incubent.Cost()
@@ -106,8 +105,7 @@ func SimulatedAnnealing(operatorPolicy OperatorPolicy) algorithm {
 		for i := 0; i < 9900; i++ {
 			PrintLoadingBar(i, 9900, 50)
 			neighbor := incubent.copy()
-            Operator := operatorPolicy.ChooseOperator()
-			Operator.apply(neighbor)
+			operatorPolicy.Apply(neighbor)
 
 			deltaE := neighbor.Cost() - incubent.Cost()
 
