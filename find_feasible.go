@@ -2,34 +2,27 @@ package main
 
 import (
 	"fmt"
+	"math"
 )
 
 // Iterate backwards and calculate how much time an insert can take without violating time feasibility. The slack at index i is the maximum time that can be added before index i without violating the time window constraints
 func (s *Solution) CalulateTimeSlack(tour []CallNode, vehicleIndex int) []int {
-	s.Feasible()
 	if len(tour) == 0 {
 		return []int{}
 	}
 
 	timeSlack := make([]int, len(tour))
 
-	var slack int
+	var slack int = math.MaxInt
 	var currentTime int
-	var firstIteration bool = true
 
 	for i := len(tour) - 1; i >= 0; i-- {
 		currentNode := tour[i]
-
 		currentTime = s.VehicleCumulativeTimes(vehicleIndex)[i]
 		constraint := currentNode.TimeWindow.UpperBound - max(currentTime, currentNode.TimeWindow.LowerBound)
 		waitTime := max(0, currentNode.TimeWindow.LowerBound-currentTime)
 
-		if firstIteration {
-			slack = constraint + waitTime
-			firstIteration = false
-		} else {
-			slack = min(slack, constraint) + waitTime
-		}
+        slack = min(slack, constraint) + waitTime
 
 		timeSlack[i] = slack
 	}
@@ -55,7 +48,7 @@ func (s *Solution) checkCapacityConstraint(call Call, insertAt InsertionPoint) b
 	return true
 }
 
-func (s *Solution) checkPickupTimeConstraint(callNode CallNode, tour []CallNode, insertAt RelativeIndex, timeSlack []int) (passed bool, arrivalAtNextNode int) {
+func (s *Solution) checkPickupTimeConstraint(callNode CallNode, tour []CallNode, insertAt RelativeIndex, timeSlack []int) (passed bool, arrivalAtPickupNode int) {
 	s.Feasible()
 	vehicle := s.Problem.Vehicles[insertAt.VehicleIndex]
 	prevTime := vehicle.StartingTime
@@ -74,86 +67,38 @@ func (s *Solution) checkPickupTimeConstraint(callNode CallNode, tour []CallNode,
 		return false, 0
 	}
 
-	var timeAtNextNode int
-
 	if insertAt.Index < len(tour) {
 		nextNode := tour[insertAt.Index]
 		originalTimeAtNextNode := s.VehicleCumulativeTimes(insertAt.VehicleIndex)[insertAt.Index]
 
-		timeAtNextNode = max(timeAtInsertedNode, callNode.TimeWindow.LowerBound) + callNode.OperationTime + vehicle.TravelTimes[callNode.Node][nextNode.Node]
+		timeAtNextNode := max(timeAtInsertedNode, callNode.TimeWindow.LowerBound) + callNode.OperationTime + vehicle.TravelTimes[callNode.Node][nextNode.Node]
 
 		delay := timeAtNextNode - originalTimeAtNextNode
 		if delay > timeSlack[insertAt.Index] {
 			return false, 0
 		}
-
 	}
-	return true, timeAtNextNode
-}
-
-func (s *Solution) handleConsecutiveInsertion(call Call, tour []CallNode, insertAt RelativeIndex, timeSlack []int) (passed bool) {
-	vehicle := s.Problem.Vehicles[insertAt.VehicleIndex]
-
-	pickupNode := call.GetCallNode(false, insertAt.VehicleIndex)
-	deliveryNode := call.GetCallNode(true, insertAt.VehicleIndex)
-
-	prevNode := vehicle.HomeNode
-	// Time finished at previous node
-	prevTime := vehicle.StartingTime
-
-	if insertAt.Index > 0 {
-		prevNodeCall := tour[insertAt.Index-1]
-		prevTime = max(s.VehicleCumulativeTimes(insertAt.VehicleIndex)[insertAt.Index-1], prevNodeCall.TimeWindow.LowerBound)
-		prevTime += prevNodeCall.OperationTime
-
-		prevNode = prevNodeCall.Node
-	}
-
-	time := prevTime + vehicle.TravelTimes[prevNode][pickupNode.Node]
-
-	if time > pickupNode.TimeWindow.UpperBound {
-		return false
-	}
-	time = max(time, pickupNode.TimeWindow.LowerBound)
-	time += pickupNode.OperationTime
-	time += vehicle.TravelTimes[pickupNode.Node][deliveryNode.Node]
-
-	if time > deliveryNode.TimeWindow.UpperBound {
-		return false
-	}
-	time = max(time, deliveryNode.TimeWindow.LowerBound)
-	time += deliveryNode.OperationTime
-
-	if insertAt.Index < len(tour) {
-		nextNode := tour[insertAt.Index]
-
-		time += vehicle.TravelTimes[deliveryNode.Node][nextNode.Node]
-
-		originalTime := s.VehicleCumulativeTimes(vehicle.Index)[insertAt.Index]
-
-		timeDiff := time - originalTime
-
-		if timeDiff > timeSlack[insertAt.Index] {
-
-			return false
-		} else {
-			return true
-		}
-	}
-
-	return true
+	return true, timeAtInsertedNode
 }
 
 func (s *Solution) checkDeliveryTimeConstraint(call Call, tour []CallNode, insertAt InsertionPoint, arrivalAtPreviousNode int, timeSlack []int) (passed bool, arrivalAtNextNode int) {
 	s.Feasible()
 
 	vehicle := s.Problem.Vehicles[insertAt.pickupIndex.VehicleIndex]
-	prevNode := tour[insertAt.deliveryIndex.Index-1]
-	doneAtPrevNode := max(arrivalAtPreviousNode, prevNode.TimeWindow.LowerBound) + prevNode.OperationTime
-
+	pickupNode := call.GetCallNode(false, vehicle.Index)
 	deliveryNode := call.GetCallNode(true, vehicle.Index)
 
-	timeAtDelivery := doneAtPrevNode + vehicle.TravelTimes[prevNode.Node][deliveryNode.Node]
+	var prevCallNode CallNode = pickupNode
+	var prevNode int = call.OriginNode
+
+	if insertAt.pickupIndex.Index != insertAt.deliveryIndex.Index {
+		prevCallNode = tour[insertAt.deliveryIndex.Index-1]
+		prevNode = prevCallNode.Node
+	}
+
+	doneAtPrevNode := max(arrivalAtPreviousNode, prevCallNode.TimeWindow.LowerBound) + prevCallNode.OperationTime
+
+	timeAtDelivery := doneAtPrevNode + vehicle.TravelTimes[prevNode][deliveryNode.Node]
 
 	if timeAtDelivery > deliveryNode.TimeWindow.UpperBound {
 		return false, 0
@@ -167,11 +112,11 @@ func (s *Solution) checkDeliveryTimeConstraint(call Call, tour []CallNode, inser
 			vehicle.TravelTimes[deliveryNode.Node][nextNode.Node]
 
 		timeDiff := arrivalAtNextNodeWithDelivery - s.VehicleCumulativeTimes(vehicle.Index)[insertAt.deliveryIndex.Index]
-		if timeDiff > timeSlack[insertAt.deliveryIndex.Index] {
-			return false, 0
-		}
+		arrivalAtNextNode = doneAtPrevNode + vehicle.TravelTimes[prevNode][nextNode.Node]
 
-		arrivalAtNextNode = doneAtPrevNode + vehicle.TravelTimes[prevNode.Node][nextNode.Node]
+		if timeDiff > timeSlack[insertAt.deliveryIndex.Index] {
+			return false, arrivalAtNextNode
+		}
 	}
 
 	return true, arrivalAtNextNode
@@ -187,39 +132,29 @@ func (i *InsertionPoint) storeCostDiff(s *Solution, call Call, tour []CallNode) 
 		prePickupNode = tour[i.pickupIndex.Index-1].Node
 	}
 
-	if i.pickupIndex.Index == i.deliveryIndex.Index {
-		diff := 0
-		diff += vehicle.TravelCosts[prePickupNode][call.OriginNode]
-		diff += call.OriginCostForVehicle[vehicleIndex]
-		diff += vehicle.TravelCosts[call.OriginNode][call.DestinationNode]
-		diff += call.DestinationCostForVehicle[vehicleIndex]
+	// Add costs for operating calls
+	diff := call.OriginCostForVehicle[vehicleIndex] + call.DestinationCostForVehicle[vehicleIndex]
+	diff -= call.CostOfNotTransporting
 
-		if i.deliveryIndex.Index < len(tour) {
-			diff += vehicle.TravelCosts[call.DestinationNode][tour[i.deliveryIndex.Index].Node]
-			diff -= vehicle.TravelCosts[prePickupNode][tour[i.deliveryIndex.Index].Node]
-		}
-		diff -= call.CostOfNotTransporting
-
-		i.costDiff = diff
-		return
-	}
-
-	diff := 0
+	// Add new travel costs
 	diff += vehicle.TravelCosts[prePickupNode][call.OriginNode]
-	diff += call.OriginCostForVehicle[vehicleIndex]
-	diff += vehicle.TravelCosts[call.OriginNode][tour[i.pickupIndex.Index].Node]
-	diff -= vehicle.TravelCosts[prePickupNode][tour[i.pickupIndex.Index].Node]
+	var preDelivery int
+	if i.pickupIndex.Index == i.deliveryIndex.Index {
+		diff += vehicle.TravelCosts[call.OriginNode][call.DestinationNode]
+		preDelivery = prePickupNode
+	} else {
+		postPickup := tour[i.pickupIndex.Index].Node
+		diff += vehicle.TravelCosts[call.OriginNode][postPickup]
 
-	preDeliveryNode := tour[i.deliveryIndex.Index-1].Node
-	diff += vehicle.TravelCosts[preDeliveryNode][call.DestinationNode]
-	diff += call.DestinationCostForVehicle[vehicleIndex]
+		preDelivery = tour[i.deliveryIndex.Index-1].Node
+		diff += vehicle.TravelCosts[preDelivery][call.DestinationNode]
+	}
 
 	if i.deliveryIndex.Index < len(tour) {
-		diff += vehicle.TravelCosts[call.DestinationNode][tour[i.deliveryIndex.Index].Node]
-		diff -= vehicle.TravelCosts[preDeliveryNode][tour[i.deliveryIndex.Index].Node]
+		postDelivery := tour[i.deliveryIndex.Index].Node
+		diff += vehicle.TravelCosts[call.DestinationNode][postDelivery]
+		diff -= vehicle.TravelCosts[preDelivery][postDelivery]
 	}
-
-	diff -= call.CostOfNotTransporting
 
 	i.costDiff = diff
 }
@@ -265,7 +200,10 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []Ins
 			passedTimeCheck, arrivalAtNextNode = s.checkDeliveryTimeConstraint(call, tour, insertAt, arrivalAtNextNode, timeSlack)
 
 			if !passedTimeCheck {
-				break
+                if arrivalAtNextNode == 0 {
+                    break
+                }
+				continue
 			}
 			insertAt.storeCostDiff(s, call, tour)
 			result = append(result, insertAt)

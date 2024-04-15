@@ -41,13 +41,10 @@ type PlaceOptimally struct{}
 
 func (o PlaceOptimally) Apply(s *Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
-
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
 	indices := FindIndices(s.Solution, 0, callIndex)
-
 	indices = s.MoveCallToOutsource(callIndex, indices)
-
 	insertionPoints := make([]InsertionPoint, 0)
 
 	for _, vehicleIndex := range possibleVehicles {
@@ -66,7 +63,6 @@ func (o PlaceOptimally) Apply(s *Solution) int {
 
 	for _, point := range insertionPoints {
 		if point.costDiff < bestInsertionPoint.costDiff {
-
 			bestInsertionPoint = point
 		}
 	}

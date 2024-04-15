@@ -160,7 +160,7 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		s.vehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
 
 		if timeAtCallNode > callNode.TimeWindow.UpperBound {
-			s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, s.vehicleCumulativeTimes[vehicleIndex])
+            s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d for vehicle: %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, vehicleIndex, s.vehicleCumulativeTimes[vehicleIndex])
 			return false
 		}
 
@@ -183,6 +183,7 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		prevNode = callNode.Node
 
 		currentTime = max(timeAtCallNode, callNode.TimeWindow.LowerBound) + callNode.OperationTime
+
 		if !callNode.IsDelivery {
 			openCount += 1
 		} else {

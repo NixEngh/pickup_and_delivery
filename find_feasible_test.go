@@ -85,6 +85,28 @@ func TestCalculateTimeSlack(t *testing.T) {
 	}
 }
 
+func CreateRandomFeasible(s *Solution, steps int) {
+    generator := rand.New(rand.NewSource(1))
+
+	numberOfMoves := 100
+	for i := 0; i < numberOfMoves; i++ {
+		vehicleIndex := generator.Intn(s.Problem.NumberOfVehicles) + 1
+
+		callNumber := generator.Intn(s.Problem.NumberOfCalls) + 1
+		inds := FindIndices(s.Solution, callNumber, 0)
+		inds = s.MoveCallToOutsource(callNumber, inds)
+
+		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
+		if len(validIndices) == 0 {
+			continue
+		}
+		s.InsertCall(callNumber, inds, validIndices[generator.Intn(len(validIndices))])
+        if !s.Feasible() {
+            panic(fmt.Sprintf("Something very wrong:\n  %v,\nvehicle: %d,\ncall: %d \ntour: %v", s.infeasibleReason,vehicleIndex,callNumber, GetTour(s.Solution, vehicleIndex)))
+        }
+	}
+}
+
 func TestFindFeasibleInsertion(t *testing.T) {
 	problem, err := LoadProblem("./Data/Call_18_Vehicle_5.txt")
 	if err != nil {
@@ -95,19 +117,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 	var falseFeasible, fakeInfeasible int
 	for testIndex := 0; testIndex < 200; testIndex++ {
 		var solution *Solution = problem.GenerateInitialSolution()
-		numberOfMoves := 100
-		for i := 0; i < numberOfMoves; i++ {
-			vehicleIndex := rand.Intn(problem.NumberOfVehicles) + 1
-
-			callNumber := rand.Intn(problem.NumberOfCalls) + 1
-			inds := FindIndices(solution.Solution, callNumber, 0)
-			inds = solution.MoveCallToOutsource(callNumber, inds)
-			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, callNumber)
-			if len(validIndices) == 0 {
-				continue
-			}
-			solution.InsertCall(callNumber, inds, validIndices[rand.Intn(len(validIndices))])
-		}
+		CreateRandomFeasible(solution, 100)
 
 		call := rand.Intn(problem.NumberOfCalls) + 1
 		indices := FindIndices(solution.Solution, 0, call)
@@ -116,6 +126,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 
 		for vehicleIndex := 1; vehicleIndex < problem.NumberOfVehicles+1; vehicleIndex++ {
 			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, call)
+
 			tour := GetCallNodeTour(&problem, solution.Solution, vehicleIndex)
 
 			testSolution := solution.copy()
@@ -219,7 +230,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 func TestSpecificFindFeasible(t *testing.T) {
 	problem, _ := LoadProblem("./Data/Call_18_Vehicle_5.txt")
 	solution := problem.GenerateInitialSolution()
-	sevenI := InsertionPoint{
+	twelveI := InsertionPoint{
 		pickupIndex: RelativeIndex{
 			2,
 			0,
@@ -229,24 +240,24 @@ func TestSpecificFindFeasible(t *testing.T) {
 			0,
 		},
 	}
-	threeI := InsertionPoint{
+	sixteenI := InsertionPoint{
 		pickupIndex: RelativeIndex{
 			2,
-			1,
+			2,
 		},
 		deliveryIndex: RelativeIndex{
 			2,
-			1,
+			2,
 		},
 	}
-	// tour: 7 3 3 7
-	inds := FindIndices(solution.Solution, 0, 7)
-	solution.InsertCall(7, inds, sevenI)
-	inds = FindIndices(solution.Solution, 0, 3)
-	solution.InsertCall(3, inds, threeI)
-    inds = FindIndices(solution.Solution, 0, 10)
+	// tour: 12 12 16 16
+	inds := FindIndices(solution.Solution, 0, 12)
+	solution.InsertCall(12, inds, twelveI)
+	inds = FindIndices(solution.Solution, 0, 16)
+	solution.InsertCall(16, inds, sixteenI)
+	inds = FindIndices(solution.Solution, 0, 10)
 	tour := GetCallNodeTour(&problem, solution.Solution, 2)
-    intTour := GetTour(solution.Solution, 2)
+	intTour := GetTour(solution.Solution, 2)
 
 	validIndices := solution.GetVehicleInsertionPoints(2, 10)
 	t.Log(validIndices)
@@ -257,27 +268,34 @@ func TestSpecificFindFeasible(t *testing.T) {
 				pickupIndex:   RelativeIndex{2, i},
 				deliveryIndex: RelativeIndex{2, j},
 			}
-            ts.InsertCall(10, inds, insertion)
-            shouldBeFeasible := false
-            for _, ins := range validIndices {
-                if ins.pickupIndex.Index == insertion.pickupIndex.Index &&
-                ins.deliveryIndex.Index == insertion.deliveryIndex.Index {
-                    shouldBeFeasible = true
-                }
-            }
+			ts.InsertCall(10, inds, insertion)
+			shouldBeFeasible := false
+			for _, ins := range validIndices {
+				if ins.pickupIndex.Index == insertion.pickupIndex.Index &&
+					ins.deliveryIndex.Index == insertion.deliveryIndex.Index {
+					shouldBeFeasible = true
+				}
+			}
 
-            if shouldBeFeasible && !ts.Feasible() {
-                t.Errorf("Infeasible solution marked as feasible\nReason: %s", ts.infeasibleReason)
-            }
-            if !shouldBeFeasible && ts.Feasible() {
-                t.Error()
-                t.Log("Indices: i:", i, "j:", j)
-                t.Log("Tour: ", intTour)
-                t.Log("Times: ", solution.VehicleCumulativeTimes(2))
-                t.Log("Timeslack: ", solution.CalulateTimeSlack(tour, 2))
-                t.Log("NewTour: ", GetTour(ts.Solution, 2))
-                t.Log("Newtimes: ", ts.VehicleCumulativeTimes(2))
-            }
+			if shouldBeFeasible && !ts.Feasible() {
+				t.Errorf("Infeasible solution marked as feasible\nReason: %s", ts.infeasibleReason)
+				t.Log("Indices: i:", i, "j:", j)
+				t.Log("Tour: ", intTour)
+				t.Log("Times: ", solution.VehicleCumulativeTimes(2))
+				t.Log("Timeslack: ", solution.CalulateTimeSlack(tour, 2))
+				t.Log("NewTour: ", GetTour(ts.Solution, 2))
+				t.Log("Newtimes: ", ts.VehicleCumulativeTimes(2))
+			}
+			if !shouldBeFeasible && ts.Feasible() {
+				t.Log()
+				t.Error("Feasible solution marked as infeasible")
+				t.Log("Indices: i:", i, "j:", j)
+				t.Log("Tour: ", intTour)
+				t.Log("Times: ", solution.VehicleCumulativeTimes(2))
+				t.Log("Timeslack: ", solution.CalulateTimeSlack(tour, 2))
+				t.Log("NewTour: ", GetTour(ts.Solution, 2))
+				t.Log("Newtimes: ", ts.VehicleCumulativeTimes(2))
+			}
 		}
 	}
 }
