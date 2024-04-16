@@ -1,37 +1,40 @@
-package main
+package operator
 
 import (
 	"math"
 	"math/rand"
 	"slices"
 	"sync"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/solution"
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
 
 type Operator interface {
-	Apply(s *Solution) int
+	Apply(s *solution.Solution) int
 }
 
 type PlaceOptimallyInRandomVehicle struct{}
 
-func (o PlaceOptimallyInRandomVehicle) Apply(s *Solution) int {
+func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
 	vehicleIndex := possibleVehicles[rand.Intn(len(possibleVehicles))]
 
-	indices := FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, 0, callIndex)
 	s.MoveCallToOutsource(callIndex, indices)
 
 	validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
-	slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
-		return b.costDiff - a.costDiff
+	slices.SortFunc(validIndices, func(a, b utils.InsertionPoint) int {
+		return b.CostDiff - a.CostDiff
 	})
 
 	if len(validIndices) == 0 {
 		return math.MaxInt32
 	}
 	insertionIndex := validIndices[0]
-	indices = FindIndices(s.Solution, 0, callIndex)
+	indices = utils.FindIndices(s.Solution, 0, callIndex)
 	s.InsertCall(callIndex, indices, insertionIndex)
 
 	return s.Cost()
@@ -39,18 +42,18 @@ func (o PlaceOptimallyInRandomVehicle) Apply(s *Solution) int {
 
 type PlaceOptimally struct{}
 
-func (o PlaceOptimally) Apply(s *Solution) int {
+func (o PlaceOptimally) Apply(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
-	indices := FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, 0, callIndex)
 	indices = s.MoveCallToOutsource(callIndex, indices)
-	insertionPoints := make([]InsertionPoint, 0)
+	insertionPoints := make([]utils.InsertionPoint, 0)
 
 	for _, vehicleIndex := range possibleVehicles {
 		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
-		slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
-			return a.costDiff - b.costDiff
+		slices.SortFunc(validIndices, func(a, b utils.InsertionPoint) int {
+			return a.CostDiff - b.CostDiff
 		})
 
 		if len(validIndices) == 0 {
@@ -59,15 +62,15 @@ func (o PlaceOptimally) Apply(s *Solution) int {
 		insertionPoints = append(insertionPoints, validIndices[0])
 	}
 
-	bestInsertionPoint := InsertionPoint{}
+	bestInsertionPoint := utils.InsertionPoint{}
 
 	for _, point := range insertionPoints {
-		if point.costDiff < bestInsertionPoint.costDiff {
+		if point.CostDiff < bestInsertionPoint.CostDiff {
 			bestInsertionPoint = point
 		}
 	}
 
-	if bestInsertionPoint.costDiff == 0 {
+	if bestInsertionPoint.CostDiff == 0 {
 		return math.MaxInt32
 	}
 
@@ -77,24 +80,24 @@ func (o PlaceOptimally) Apply(s *Solution) int {
 }
 
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
-func (o PlaceOptimally) ApplyWithConcurrency(s *Solution) int {
+func (o PlaceOptimally) ApplyWithConcurrency(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
-	indices := FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, 0, callIndex)
 	indices = s.MoveCallToOutsource(callIndex, indices)
 
 	var wg = sync.WaitGroup{}
-	insertionPoints := make(chan InsertionPoint)
+	insertionPoints := make(chan utils.InsertionPoint)
 
 	for _, vehicleIndex := range possibleVehicles {
 		wg.Add(1)
 		go func(vehicleIndex int) {
 			defer wg.Done()
 			validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
-			slices.SortFunc(validIndices, func(a, b InsertionPoint) int {
-				return a.costDiff - b.costDiff
+			slices.SortFunc(validIndices, func(a, b utils.InsertionPoint) int {
+				return a.CostDiff - b.CostDiff
 			})
 
 			if len(validIndices) == 0 {
@@ -109,15 +112,15 @@ func (o PlaceOptimally) ApplyWithConcurrency(s *Solution) int {
 		close(insertionPoints)
 	}()
 
-	bestInsertionPoint := InsertionPoint{}
+	bestInsertionPoint := utils.InsertionPoint{}
 
 	for point := range insertionPoints {
-		if point.costDiff < bestInsertionPoint.costDiff {
+		if point.CostDiff < bestInsertionPoint.CostDiff {
 			bestInsertionPoint = point
 		}
 	}
 
-	if bestInsertionPoint.costDiff == 0 {
+	if bestInsertionPoint.CostDiff == 0 {
 		return math.MaxInt32
 	}
 
@@ -128,19 +131,19 @@ func (o PlaceOptimally) ApplyWithConcurrency(s *Solution) int {
 
 type PlaceRandomly struct{}
 
-func (o PlaceRandomly) Apply(s *Solution) int {
+func (o PlaceRandomly) Apply(s *solution.Solution) int {
 	callNumber := rand.Intn(s.Problem.NumberOfCalls) + 1
-	s.placeCallRandomly(callNumber)
+	s.PlaceCallRandomly(callNumber)
 	return s.Cost()
 }
 
 type PlaceFiveCallsRandomly struct{}
 
-func (o PlaceFiveCallsRandomly) Apply(s *Solution) int {
+func (o PlaceFiveCallsRandomly) Apply(s *solution.Solution) int {
 	callsToMove := rand.Perm(s.Problem.NumberOfCalls)
 	count := 0
 	for _, callToMove := range callsToMove {
-		if ok := s.placeCallRandomly(callToMove + 1); ok {
+		if ok := s.PlaceCallRandomly(callToMove + 1); ok {
 			count += 1
 		}
 
@@ -153,11 +156,11 @@ func (o PlaceFiveCallsRandomly) Apply(s *Solution) int {
 
 type OldOneReinsert struct{}
 
-func (o OldOneReinsert) Apply(s *Solution) int {
+func (o OldOneReinsert) Apply(s *solution.Solution) int {
 	move_in_vehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
-	inds := FindIndices(s.Solution, call, 0)
+	inds := utils.FindIndices(s.Solution, call, 0)
 	if move_in_vehicle {
 		o.moveCallInVehicle(s, inds[call], inds[0])
 		return s.Cost()
@@ -198,7 +201,7 @@ func (o OldOneReinsert) Apply(s *Solution) int {
 	return s.Cost()
 }
 
-func (o OldOneReinsert) moveCallInVehicle(s *Solution, callInds, zeroInds []int) bool {
+func (o OldOneReinsert) moveCallInVehicle(s *solution.Solution, callInds, zeroInds []int) bool {
 	solution := s.Solution
 	pairs := []struct{ callIndex, delta int }{
 		{callInds[0], -1},

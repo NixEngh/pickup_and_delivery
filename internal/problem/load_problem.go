@@ -1,4 +1,4 @@
-package main
+package problem
 
 import (
 	"bufio"
@@ -169,3 +169,25 @@ func LoadProblem(path string) (Problem, error) {
 	return p, nil
 }
 
+func LoadProblems(directory string) ([]Problem, error) {
+	files, err := os.ReadDir(directory)
+	if err != nil {
+		return nil, err
+	}
+
+	problems := make([]Problem, 0)
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		problem, err := LoadProblem(directory + file.Name())
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		problems = append(problems, problem)
+	}
+
+	return problems, nil
+}

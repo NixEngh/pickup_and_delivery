@@ -1,10 +1,13 @@
-package main
+package solution
 
 import (
 	"fmt"
 	"math/rand"
 	"slices"
 	"testing"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/problem"
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
 
 func equal(a, b []int) bool {
@@ -17,20 +20,20 @@ func equal(a, b []int) bool {
 }
 
 func TestMoveRelativeToVehicle(t *testing.T) {
-	problem, _ := LoadProblem("Data/Call_7_Vehicle_3.txt")
-	solution := problem.GenerateInitialSolution()
+	problem, _ := problem.LoadProblem("Data/Call_7_Vehicle_3.txt")
+	solution := GenerateInitialSolution(&problem)
 	for i := 0; i < 100; i++ {
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := FindIndices(solution.Solution, call, 0)
+		indices := utils.FindIndices(solution.Solution, call, 0)
 		indices = solution.MoveCallToOutsource(call, indices)
 		vehicle := rand.Intn(problem.NumberOfVehicles) + 1
-		tour := GetCallNodeTour(&problem, solution.Solution, vehicle)
+		tour := utils.GetCallNodeTour(&problem, solution.Solution, vehicle)
 
-		movePickupTo := RelativeIndex{
+		movePickupTo := utils.RelativeIndex{
 			VehicleIndex: vehicle,
 			Index:        0,
 		}
-		moveDeliveryTo := RelativeIndex{
+		moveDeliveryTo := utils.RelativeIndex{
 			VehicleIndex: vehicle,
 			Index:        1,
 		}
@@ -40,15 +43,15 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 			moveDeliveryTo.Index = rand.Intn(len(tour)+1-a) + a + 1
 		}
 
-		insertAt := InsertionPoint{
-			pickupIndex:   movePickupTo,
-			deliveryIndex: moveDeliveryTo,
+		insertAt := utils.InsertionPoint{
+			PickupIndex:   movePickupTo,
+			DeliveryIndex: moveDeliveryTo,
 		}
 
 		solution.MoveCallToVehicle(call, indices, insertAt)
 		//fmt.Println("After move: ", solution.Solution)
 
-		newTour := GetCallNodeTour(&problem, solution.Solution, vehicle)
+		newTour := utils.GetCallNodeTour(&problem, solution.Solution, vehicle)
 
 		if len(newTour) != len(tour)+2 {
 			fmt.Println("len newTour: ", len(newTour))
@@ -56,7 +59,7 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 			t.Errorf("Tour length not correct")
 			panic("Tour length not correct")
 		} else {
-			if newTour[movePickupTo.Index].callIndex != call || newTour[moveDeliveryTo.Index].callIndex != call {
+			if newTour[movePickupTo.Index].CallIndex != call || newTour[moveDeliveryTo.Index].CallIndex != call {
 				t.Errorf("Call not moved correctly")
 			}
 		}
@@ -69,11 +72,11 @@ func TestCalculateTimeSlack(t *testing.T) {
 		{0, 2},
 	}
 
-	tour := []CallNode{
-		{TimeWindow: TimeWindow{LowerBound: 2, UpperBound: 3}},
-		{TimeWindow: TimeWindow{LowerBound: 2, UpperBound: 5}},
-		{TimeWindow: TimeWindow{LowerBound: 2, UpperBound: 5}},
-		{TimeWindow: TimeWindow{LowerBound: 7, UpperBound: 9}},
+	tour := []utils.CallNode{
+		{TimeWindow: problem.TimeWindow{LowerBound: 2, UpperBound: 3}},
+		{TimeWindow: problem.TimeWindow{LowerBound: 2, UpperBound: 5}},
+		{TimeWindow: problem.TimeWindow{LowerBound: 2, UpperBound: 5}},
+		{TimeWindow: problem.TimeWindow{LowerBound: 7, UpperBound: 9}},
 	}
 	expected := []int{2, 1, 1, 3}
 
@@ -93,7 +96,7 @@ func CreateRandomFeasible(s *Solution, steps int) {
 		vehicleIndex := generator.Intn(s.Problem.NumberOfVehicles) + 1
 
 		callNumber := generator.Intn(s.Problem.NumberOfCalls) + 1
-		inds := FindIndices(s.Solution, callNumber, 0)
+		inds := utils.FindIndices(s.Solution, callNumber, 0)
 		inds = s.MoveCallToOutsource(callNumber, inds)
 
 		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
@@ -102,13 +105,13 @@ func CreateRandomFeasible(s *Solution, steps int) {
 		}
 		s.InsertCall(callNumber, inds, validIndices[generator.Intn(len(validIndices))])
         if !s.Feasible() {
-            panic(fmt.Sprintf("Something very wrong:\n  %v,\nvehicle: %d,\ncall: %d \ntour: %v", s.infeasibleReason,vehicleIndex,callNumber, GetTour(s.Solution, vehicleIndex)))
+            panic(fmt.Sprintf("Something very wrong:\n  %v,\nvehicle: %d,\ncall: %d \ntour: %v", s.infeasibleReason,vehicleIndex,callNumber, utils.GetTour(s.Solution, vehicleIndex)))
         }
 	}
 }
 
 func TestFindFeasibleInsertion(t *testing.T) {
-	problem, err := LoadProblem("./Data/Call_18_Vehicle_5.txt")
+	problem, err := problem.LoadProblem("./Data/Call_18_Vehicle_5.txt")
 	if err != nil {
 		t.Errorf("Error loading problem")
 	}
@@ -116,36 +119,36 @@ func TestFindFeasibleInsertion(t *testing.T) {
 	var correctFeasible, correctInfeasible int
 	var falseFeasible, fakeInfeasible int
 	for testIndex := 0; testIndex < 200; testIndex++ {
-		var solution *Solution = problem.GenerateInitialSolution()
+		var solution *Solution = GenerateInitialSolution(&problem)
 		CreateRandomFeasible(solution, 100)
 
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := FindIndices(solution.Solution, 0, call)
+		indices := utils.FindIndices(solution.Solution, 0, call)
 
 		solution.MoveCallToOutsource(call, indices)
 
 		for vehicleIndex := 1; vehicleIndex < problem.NumberOfVehicles+1; vehicleIndex++ {
 			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, call)
 
-			tour := GetCallNodeTour(&problem, solution.Solution, vehicleIndex)
+			tour := utils.GetCallNodeTour(&problem, solution.Solution, vehicleIndex)
 
-			testSolution := solution.copy()
+			testSolution := solution.Copy()
 			for i := 0; i < len(tour)+1; i++ {
 				for j := i; j < len(tour)+1; j++ {
-					inds := FindIndices(testSolution.Solution, call, 0)
+					inds := utils.FindIndices(testSolution.Solution, call, 0)
 					inds = testSolution.MoveCallToOutsource(call, inds)
 
-					comparisonPoint := InsertionPoint{
-						pickupIndex:   RelativeIndex{VehicleIndex: vehicleIndex, Index: i},
-						deliveryIndex: RelativeIndex{VehicleIndex: vehicleIndex, Index: j},
+					comparisonPoint := utils.InsertionPoint{
+						PickupIndex:   utils.RelativeIndex{VehicleIndex: vehicleIndex, Index: i},
+						DeliveryIndex: utils.RelativeIndex{VehicleIndex: vehicleIndex, Index: j},
 					}
 					testSolution.InsertCall(call, inds, comparisonPoint)
 
-					if _, ok := slices.BinarySearchFunc(validIndices, comparisonPoint, func(a, t InsertionPoint) int {
-						if t.pickupIndex.Index == a.pickupIndex.Index {
-							return a.deliveryIndex.Index - t.deliveryIndex.Index
+					if _, ok := slices.BinarySearchFunc(validIndices, comparisonPoint, func(a, t utils.InsertionPoint) int {
+						if t.PickupIndex.Index == a.PickupIndex.Index {
+							return a.DeliveryIndex.Index - t.DeliveryIndex.Index
 						}
-						return a.pickupIndex.Index - t.pickupIndex.Index
+						return a.PickupIndex.Index - t.PickupIndex.Index
 					}); ok {
 						if !testSolution.Feasible() {
 							t.Log()
@@ -156,12 +159,12 @@ func TestFindFeasibleInsertion(t *testing.T) {
 							t.Log("Call: ", call)
 							t.Log("valid indices: ", validIndices)
 							t.Log("Current indexes: ", i, j)
-							t.Log(GetTour(testSolution.Solution, vehicleIndex), " - tour")
+							t.Log(utils.GetTour(testSolution.Solution, vehicleIndex), " - tour")
 
 							t.Log("Capacities: ")
 							t.Log(testSolution.VehicleCumulativeCapacities(vehicleIndex), " - capacity")
 							SizeString := ""
-							for _, call := range GetTour(testSolution.Solution, vehicleIndex) {
+							for _, call := range utils.GetTour(testSolution.Solution, vehicleIndex) {
 								SizeString += fmt.Sprintf("%d, ", problem.Calls[call].Size)
 							}
 							t.Log(SizeString, " - sizes")
@@ -187,12 +190,12 @@ func TestFindFeasibleInsertion(t *testing.T) {
 							t.Log("Call: ", call)
 							t.Log("valid indices: ", validIndices)
 							t.Log("Current index: ", i, j)
-							t.Log(GetTour(testSolution.Solution, vehicleIndex), " - tour")
+							t.Log(utils.GetTour(testSolution.Solution, vehicleIndex), " - tour")
 
 							t.Log("Capacities: ")
 							t.Log(testSolution.VehicleCumulativeCapacities(vehicleIndex), " - capacity")
 							SizeString := ""
-							for _, call := range GetTour(testSolution.Solution, vehicleIndex) {
+							for _, call := range utils.GetTour(testSolution.Solution, vehicleIndex) {
 								SizeString += fmt.Sprintf("%d, ", problem.Calls[call].Size)
 							}
 							t.Log(SizeString, " - sizes")
@@ -205,7 +208,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 							t.Log(solution.CalulateTimeSlack(tour, vehicleIndex), " - timeslack")
 
 							UpperBounds := ""
-							for _, call := range GetCallNodeTour(&problem, solution.Solution, vehicleIndex) {
+							for _, call := range utils.GetCallNodeTour(&problem, solution.Solution, vehicleIndex) {
 								UpperBounds += fmt.Sprintf("%d, ", call.TimeWindow.UpperBound)
 							}
 							t.Log(UpperBounds, " - old upperbounds")
@@ -228,51 +231,51 @@ func TestFindFeasibleInsertion(t *testing.T) {
 }
 
 func TestSpecificFindFeasible(t *testing.T) {
-	problem, _ := LoadProblem("./Data/Call_18_Vehicle_5.txt")
-	solution := problem.GenerateInitialSolution()
-	twelveI := InsertionPoint{
-		pickupIndex: RelativeIndex{
-			2,
-			0,
+	problem, _ := problem.LoadProblem("./Data/Call_18_Vehicle_5.txt")
+	solution := GenerateInitialSolution(&problem)
+	twelveI := utils.InsertionPoint{
+		PickupIndex: utils.RelativeIndex{
+			VehicleIndex: 2,
+			Index: 0,
 		},
-		deliveryIndex: RelativeIndex{
-			2,
-			0,
+		DeliveryIndex: utils.RelativeIndex{
+			VehicleIndex: 2,
+			Index: 0,
 		},
 	}
-	sixteenI := InsertionPoint{
-		pickupIndex: RelativeIndex{
-			2,
-			2,
+	sixteenI := utils.InsertionPoint{
+		PickupIndex: utils.RelativeIndex{
+			VehicleIndex: 2,
+			Index: 2,
 		},
-		deliveryIndex: RelativeIndex{
-			2,
-			2,
+		DeliveryIndex: utils.RelativeIndex{
+			VehicleIndex: 2,
+			Index: 2,
 		},
 	}
 	// tour: 12 12 16 16
-	inds := FindIndices(solution.Solution, 0, 12)
+	inds := utils.FindIndices(solution.Solution, 0, 12)
 	solution.InsertCall(12, inds, twelveI)
-	inds = FindIndices(solution.Solution, 0, 16)
+	inds = utils.FindIndices(solution.Solution, 0, 16)
 	solution.InsertCall(16, inds, sixteenI)
-	inds = FindIndices(solution.Solution, 0, 10)
-	tour := GetCallNodeTour(&problem, solution.Solution, 2)
-	intTour := GetTour(solution.Solution, 2)
+	inds = utils.FindIndices(solution.Solution, 0, 10)
+	tour := utils.GetCallNodeTour(&problem, solution.Solution, 2)
+	intTour := utils.GetTour(solution.Solution, 2)
 
 	validIndices := solution.GetVehicleInsertionPoints(2, 10)
 	t.Log(validIndices)
 	for i := 0; i < len(tour)+1; i++ {
 		for j := i; j < len(tour)+1; j++ {
-			ts := solution.copy()
-			insertion := InsertionPoint{
-				pickupIndex:   RelativeIndex{2, i},
-				deliveryIndex: RelativeIndex{2, j},
+			ts := solution.Copy()
+			insertion := utils.InsertionPoint{
+				PickupIndex:   utils.RelativeIndex{VehicleIndex: 2, Index: i},
+				DeliveryIndex: utils.RelativeIndex{VehicleIndex: 2, Index: j},
 			}
 			ts.InsertCall(10, inds, insertion)
 			shouldBeFeasible := false
 			for _, ins := range validIndices {
-				if ins.pickupIndex.Index == insertion.pickupIndex.Index &&
-					ins.deliveryIndex.Index == insertion.deliveryIndex.Index {
+				if ins.PickupIndex.Index == insertion.PickupIndex.Index &&
+					ins.DeliveryIndex.Index == insertion.DeliveryIndex.Index {
 					shouldBeFeasible = true
 				}
 			}
@@ -283,7 +286,7 @@ func TestSpecificFindFeasible(t *testing.T) {
 				t.Log("Tour: ", intTour)
 				t.Log("Times: ", solution.VehicleCumulativeTimes(2))
 				t.Log("Timeslack: ", solution.CalulateTimeSlack(tour, 2))
-				t.Log("NewTour: ", GetTour(ts.Solution, 2))
+				t.Log("NewTour: ", utils.GetTour(ts.Solution, 2))
 				t.Log("Newtimes: ", ts.VehicleCumulativeTimes(2))
 			}
 			if !shouldBeFeasible && ts.Feasible() {
@@ -293,7 +296,7 @@ func TestSpecificFindFeasible(t *testing.T) {
 				t.Log("Tour: ", intTour)
 				t.Log("Times: ", solution.VehicleCumulativeTimes(2))
 				t.Log("Timeslack: ", solution.CalulateTimeSlack(tour, 2))
-				t.Log("NewTour: ", GetTour(ts.Solution, 2))
+				t.Log("NewTour: ", utils.GetTour(ts.Solution, 2))
 				t.Log("Newtimes: ", ts.VehicleCumulativeTimes(2))
 			}
 		}
@@ -301,24 +304,24 @@ func TestSpecificFindFeasible(t *testing.T) {
 }
 
 func TestGetCostImprovement(t *testing.T) {
-	problem, _ := LoadProblem("./Data/Call_7_Vehicle_3.txt")
-	solution := problem.GenerateInitialSolution()
+	problem, _ := problem.LoadProblem("./Data/Call_7_Vehicle_3.txt")
+	solution := GenerateInitialSolution(&problem)
 	for i := 0; i < 100; i++ {
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := FindIndices(solution.Solution, 0, call)
+		indices := utils.FindIndices(solution.Solution, 0, call)
 		indices = solution.MoveCallToOutsource(call, indices)
 
 		for vehicleIndex := 1; vehicleIndex <= problem.NumberOfVehicles; vehicleIndex++ {
 			validIndices := solution.GetVehicleInsertionPoints(vehicleIndex, call)
 			for _, insertionPoint := range validIndices {
-				testSolution := solution.copy()
+				testSolution := solution.Copy()
 				testSolution.InsertCall(call, indices, insertionPoint)
-				if testSolution.Cost()-solution.Cost() != insertionPoint.costDiff {
+				if testSolution.Cost()-solution.Cost() != insertionPoint.CostDiff {
 					t.Log("Originalcost: ", solution.Cost())
 					t.Log("Cost of new solution: ", testSolution.Cost())
 
 					t.Log("Real diff: ", solution.Cost()-testSolution.Cost())
-					t.Log("Stored Costdiff: ", insertionPoint.costDiff)
+					t.Log("Stored Costdiff: ", insertionPoint.CostDiff)
 					t.Error("Not equal")
 				}
 			}

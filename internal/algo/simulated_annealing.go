@@ -1,68 +1,31 @@
-package main
+package algo
 
 import (
 	"fmt"
 	"math"
 	"math/rand"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/operator"
+	"github.com/NixEngh/pickup_and_delivery/internal/problem"
+	"github.com/NixEngh/pickup_and_delivery/internal/solution"
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
-
-func RandomSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
-	bestSolution = problem.GenerateInitialSolution()
-	bestCost = bestSolution.Cost()
-
-	for i := 0; i < 10000; i++ {
-		PrintLoadingBar(i, 10000, 50)
-		solution := problem.GenerateInitialSolution()
-
-		if solution.Feasible() && solution.Cost() < bestCost {
-			bestSolution = solution
-			bestCost = solution.Cost()
-		}
-	}
-	fmt.Println()
-	return bestSolution, bestCost
-}
-
-func LocalSearch(problem *Problem) (bestSolution *Solution, bestCost int) {
-	operator := OldOneReinsert{}
-
-	bestSolution = problem.GenerateInitialSolution()
-	bestCost = bestSolution.Cost()
-
-	feasibleCount := 0
-	for i := 0; i < 10000; i++ {
-		PrintLoadingBar(i, 10000, 50)
-		operator.Apply(bestSolution)
-
-		if bestSolution.Feasible() {
-			feasibleCount++
-			if bestSolution.Cost() < bestCost {
-				bestCost = bestSolution.Cost()
-			}
-		}
-	}
-	fmt.Println()
-	fmt.Println("Feasible solutions found:", feasibleCount)
-
-	return bestSolution, bestCost
-}
-
-func SimulatedAnnealing(operatorPolicy OperatorPolicy) algorithm {
-	return func(problem *Problem) (bestSolution *Solution, bestCost int) {
+func SimulatedAnnealing(operatorPolicy operator.OperatorPolicy) Algorithm {
+	return func(problem *problem.Problem) (bestSolution *solution.Solution, bestCost int) {
 		finalTemperature := 0.1
 
-		bestSolution = problem.GenerateInitialSolution()
+		bestSolution = solution.GenerateInitialSolution(problem)
 		bestCost = bestSolution.Cost()
 
-		incubent := bestSolution.copy()
+		incubent := bestSolution.Copy()
 
 		deltas := make([]int, 0)
 		fmt.Println("Simulated Annealing for operator policy: ", operatorPolicy.Name())
 		fmt.Println("Estimating initial temperature")
 
 		for i := 0; i < 100; i++ {
-			PrintLoadingBar(i, 100, 50)
-			neighbor := incubent.copy()
+			utils.PrintLoadingBar(i, 100, 50)
+			neighbor := incubent.Copy()
             operatorPolicy.Apply(neighbor)
 
 			neighborCost := neighbor.Cost()
@@ -103,8 +66,8 @@ func SimulatedAnnealing(operatorPolicy OperatorPolicy) algorithm {
 
 		feasibleCount := 0
 		for i := 0; i < 9900; i++ {
-			PrintLoadingBar(i, 9900, 50)
-			neighbor := incubent.copy()
+			utils.PrintLoadingBar(i, 9900, 50)
+			neighbor := incubent.Copy()
 			operatorPolicy.Apply(neighbor)
 
 			deltaE := neighbor.Cost() - incubent.Cost()

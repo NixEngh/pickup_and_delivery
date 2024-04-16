@@ -1,6 +1,10 @@
-package main
+package solution
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
+)
 
 func (s *Solution) VehicleCumulativeCapacities(vehicleIndex int) []int {
 	if _, ok := s.VehiclesToCheckFeasibility[vehicleIndex]; ok {
@@ -88,7 +92,7 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 	}
 
 	found := make(map[int]struct{})
-	tour := GetTour(solution, vehicleIndex)
+	tour := utils.GetTour(solution, vehicleIndex)
 
 	vehicle := problem.Vehicles[vehicleIndex]
 	total := 0
@@ -141,7 +145,7 @@ func (s *Solution) UpdateFeasibility() {
 
 // Returns true if the vehicle is feasible
 func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
-	tour := GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
+	tour := utils.GetCallNodeTour(s.Problem, s.Solution, vehicleIndex)
 
 	vehicle := s.Problem.Vehicles[vehicleIndex]
 	currentTime := vehicle.StartingTime
@@ -160,11 +164,11 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		s.vehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
 
 		if timeAtCallNode > callNode.TimeWindow.UpperBound {
-            s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d for vehicle: %d\ncumulative times: %v", timeAtCallNode, i, callNode.callIndex, callNode.TimeWindow.UpperBound, vehicleIndex, s.vehicleCumulativeTimes[vehicleIndex])
+            s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d for vehicle: %d\ncumulative times: %v", timeAtCallNode, i, callNode.CallIndex, callNode.TimeWindow.UpperBound, vehicleIndex, s.vehicleCumulativeTimes[vehicleIndex])
 			return false
 		}
 
-		size := s.Problem.Calls[callNode.callIndex].Size
+		size := s.Problem.Calls[callNode.CallIndex].Size
 		if callNode.IsDelivery {
 			size = -size
 		}
@@ -174,7 +178,7 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 
 		// Capacity
 		if currentLoad+size > vehicle.Capacity {
-			s.infeasibleReason = fmt.Sprintf("The capacity %d at index %d was too low for call %d with size %d", currCap, i, callNode.callIndex, s.Problem.Calls[callNode.callIndex].Size)
+			s.infeasibleReason = fmt.Sprintf("The capacity %d at index %d was too low for call %d with size %d", currCap, i, callNode.CallIndex, s.Problem.Calls[callNode.CallIndex].Size)
 			return false
 		}
 

@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"bytes"
@@ -9,6 +9,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 )
 
 func FindIndices[T comparable](slice []T, values ...T) map[T][]int {
@@ -66,7 +68,7 @@ func GetTour(solution []int, vehicleIndex int) []int {
 	return solution[indices[0]:indices[1]]
 }
 
-func GetCallNodeTour(p *Problem, solution []int, vehicleIndex int) []CallNode {
+func GetCallNodeTour(p *problem.Problem, solution []int, vehicleIndex int) []CallNode {
 	tourIndices := GetTourIndices(solution, vehicleIndex)
 	tour := make([]CallNode, 0)
 
@@ -85,7 +87,7 @@ func GetCallNodeTour(p *Problem, solution []int, vehicleIndex int) []CallNode {
 			cost = call.DestinationCostForVehicle[vehicleIndex]
 		}
 		tour = append(tour, CallNode{
-			callIndex:     callIndex,
+			CallIndex:     callIndex,
 			TimeWindow:    timeWindow,
 			Node:          node,
 			IsDelivery:    isDelivery[callIndex],
@@ -109,28 +111,6 @@ func PrintLoadingBar(current int, total int, steps int) {
 	}
 }
 
-func LoadProblems(directory string) ([]Problem, error) {
-	files, err := os.ReadDir(directory)
-	if err != nil {
-		return nil, err
-	}
-
-	problems := make([]Problem, 0)
-
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-		problem, err := LoadProblem(directory + file.Name())
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		problems = append(problems, problem)
-	}
-
-	return problems, nil
-}
 
 type CSVTableRow struct {
 	Algorithm    string
@@ -170,18 +150,18 @@ func WriteToCSV(directory string, name string, data []CSVTableRow) {
 
 func CreateResultsDirectory() string {
 
-	if _, err := os.Stat("results"); os.IsNotExist(err) {
+	if _, err := os.Stat("./data/results"); os.IsNotExist(err) {
 		os.Mkdir("results", 0755)
 	}
 
 	t := time.Now()
-	directory := fmt.Sprintf("results/%s", t.Format("2006-01-02_15:04:05"))
+	directory := fmt.Sprintf("./data/results/%s", t.Format("2006-01-02_15:04:05"))
 	os.Mkdir(directory, 0755)
 
 	return directory
 }
 
-func runPythonScript(directory string) {
+func RunPythonScript(directory string) {
 	file, err := os.OpenFile(directory+"/results.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -191,7 +171,7 @@ func runPythonScript(directory string) {
 	// Capture standard error
 	stderr := &bytes.Buffer{}
 
-	cmd := exec.Command("python3", "printlatest.py")
+	cmd := exec.Command("python3", "./scripts/printlatest.py")
 	cmd.Stdout = file
 	cmd.Stderr = stderr // Set standard error to be captured
 

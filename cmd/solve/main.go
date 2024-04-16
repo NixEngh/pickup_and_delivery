@@ -5,10 +5,24 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/algo"
+	"github.com/NixEngh/pickup_and_delivery/internal/assignment"
+	"github.com/NixEngh/pickup_and_delivery/internal/problem"
+	"github.com/NixEngh/pickup_and_delivery/internal/solution"
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
 
 func main() {
-	problems, err := LoadProblems("./Data/")
+    algorithms := map[string]algo.Algorithm{
+        "1_Adaptive": assignment.Adaptive(),
+    }
+
+    Run(algorithms)
+}
+
+func Run(algorithms map[string]algo.Algorithm) {
+	problems, err := problem.LoadProblems("./data/input/")
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -21,38 +35,27 @@ func main() {
 		return name1 < name2
 	})
 
-	algorithms := map[string]algorithm{
-		//"0_Random_Search":       RandomSearch,
-		//"1_Local_Search":        LocalSearch,
-		//"2_Simulated_Annealing": Assignment3(),
-		//"3_Equal":       EqualProbability(),
-		//"4_Moderate":    Moderate(),
-		//"5_Adventurous": Adventurous(),
-		//"6_Intense":     Intense(),
-		//"7_Extreme":     Extreme(),
-		"8_adaptive":    Adaptive(),
-	}
-
 	improvements := make(map[string]float64)
 
-	directory := CreateResultsDirectory()
+	directory := utils.CreateResultsDirectory()
 	for _, problem := range problems {
-		rows := make([]CSVTableRow, 0)
+		rows := make([]utils.CSVTableRow, 0)
 		for name, algorithm := range algorithms {
 			row := RunExperiment(&problem, name, algorithm)
 			rows = append(rows, row)
 			improvements[name+"-"+problem.Name] += row.Improvement
 		}
-		WriteToCSV(directory, problem.Name, rows)
+		utils.WriteToCSV(directory, problem.Name, rows)
 	}
-	runPythonScript(directory)
+	utils.RunPythonScript(directory)
 
 	for name, improvement := range improvements {
 		fmt.Println(name, improvement)
 	}
+
 }
 
-func RunExperiment(problem *Problem, algorithmName string, algorithm algorithm) CSVTableRow {
+func RunExperiment(problem *problem.Problem, algorithmName string, algorithm algo.Algorithm) utils.CSVTableRow {
 	costs := make([]int, 0)
 	solutions := make([][]int, 0)
 
@@ -83,8 +86,15 @@ func RunExperiment(problem *Problem, algorithmName string, algorithm algorithm) 
 		}
 	}
 
-	initialCost := problem.GenerateInitialSolution().Cost()
+	initialCost := solution.GenerateInitialSolution(problem).Cost()
 	improvement := 100 * (float64(initialCost) - float64(bestCost)) / float64(initialCost)
 
-	return CSVTableRow{algorithmName, averageCost, bestCost, improvement, averageTime, bestSolution}
+	return utils.CSVTableRow{
+        Algorithm:  algorithmName,
+        AverageCost:  averageCost,
+        BestCost:    bestCost,
+        Improvement: improvement,
+        RunningTime: averageTime,
+        BestSolution: bestSolution,
+    }
 }
