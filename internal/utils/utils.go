@@ -155,7 +155,7 @@ func CreateResultsDirectory() string {
 	}
 
 	t := time.Now()
-	directory := fmt.Sprintf("./data/results/%s", t.Format("2006-01-02_15:04:05"))
+	directory := fmt.Sprintf("data/results/%s", t.Format("2006-01-02_15:04:05"))
 	os.Mkdir(directory, 0755)
 
 	return directory

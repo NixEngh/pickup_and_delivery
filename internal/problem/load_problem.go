@@ -17,7 +17,7 @@ func LoadProblem(path string) (Problem, error) {
 
 	var p Problem
 
-    p.Name = strings.TrimSuffix(strings.TrimPrefix(path, "./Data/"), ".txt")
+    p.Name = strings.TrimSuffix(strings.TrimPrefix(path, "./data/input/"), ".txt")
 
 	scanner := bufio.NewScanner(file)
 
@@ -38,7 +38,6 @@ func LoadProblem(path string) (Problem, error) {
     if err != nil {
         return Problem{}, fmt.Errorf("failed to parse number of vehicles")
     }
-    
 
     // Read vehicle details
     scanner.Scan()

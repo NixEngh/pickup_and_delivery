@@ -42,7 +42,7 @@ func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 
 type PlaceOptimally struct{}
 
-func (o PlaceOptimally) Apply(s *solution.Solution) int {
+func (o PlaceOptimally) ApplyWithoutConc(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
@@ -80,7 +80,7 @@ func (o PlaceOptimally) Apply(s *solution.Solution) int {
 }
 
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
-func (o PlaceOptimally) ApplyWithConcurrency(s *solution.Solution) int {
+func (o PlaceOptimally) Apply(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]

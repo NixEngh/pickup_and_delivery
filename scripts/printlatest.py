@@ -7,7 +7,7 @@ pd.set_option('display.max_columns', None)  # adjust according to your needs
 pd.set_option('display.width', None)  # adjust width for your display
 pd.set_option('display.max_colwidth', None)  # or a high number to avoid truncation of column content
 
-RESULTS_DIR = '../data/results/'
+RESULTS_DIR = './data/results/'
 
 directories = [d for d in os.listdir(RESULTS_DIR) if os.path.isdir(f'{RESULTS_DIR}{d}')]
 latest_directory = sorted(directories)[-1]
