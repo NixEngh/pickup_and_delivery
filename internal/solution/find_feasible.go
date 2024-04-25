@@ -215,3 +215,19 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 
 	return result
 }
+
+func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
+	inds := utils.FindIndices(s.Solution, callNumber, 0)
+
+	inds = s.MoveCallToOutsource(callNumber, inds)
+	possibleVehicles := s.Problem.CallVehicleMap[callNumber]
+
+	feasibleInsertions := make([]utils.InsertionPoint, 0)
+
+	for _, vehicleIndex := range possibleVehicles {
+		currentInsertions := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
+		feasibleInsertions = append(feasibleInsertions, currentInsertions...)
+	}
+
+    return feasibleInsertions
+}

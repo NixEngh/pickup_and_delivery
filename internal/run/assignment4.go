@@ -1,14 +1,28 @@
-package assignment
+package run
 
 import (
 	"github.com/NixEngh/pickup_and_delivery/internal/algo"
 	"github.com/NixEngh/pickup_and_delivery/internal/operator"
+	"github.com/NixEngh/pickup_and_delivery/internal/policy"
+	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 )
+
+func RunAssignment4(problems []*problem.Problem) {
+    algorithms := map[string]algo.Algorithm{
+        "Equal Probability": EqualProbability(),
+        "Moderate": Moderate(),
+        "Adventurous": Adventurous(),
+        "Intense": Intense(),
+        "Extreme": Extreme(),
+    }
+
+    Run(algorithms, problems)
+}
 
 func EqualProbability() algo.Algorithm {
 
-    policy := operator.NewChooseRandomOperator(
-		[]operator.OperatorScore{
+    policy := policy.NewChooseRandomOperator(
+		[]policy.OperatorScore{
 			{Operator: operator.PlaceOptimally{}, Probability: 1},
 			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
 			{Operator: operator.PlaceRandomly{}, Probability: 1},
@@ -22,8 +36,8 @@ func EqualProbability() algo.Algorithm {
 
 func Moderate() algo.Algorithm {
 
-    policy := operator.NewChooseRandomOperator(
-		[]operator.OperatorScore{
+    policy := policy.NewChooseRandomOperator(
+		[]policy.OperatorScore{
 			{Operator: operator.PlaceOptimally{}, Probability: 1},
 			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
 			{Operator: operator.PlaceRandomly{}, Probability: 2},
@@ -35,8 +49,8 @@ func Moderate() algo.Algorithm {
 }
 
 func Adventurous() algo.Algorithm {
-	policy := operator.NewChooseRandomOperator(
-		[]operator.OperatorScore{
+	policy := policy.NewChooseRandomOperator(
+		[]policy.OperatorScore{
 			{Operator: operator.PlaceOptimally{}, Probability: 1},
 			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
 			{Operator: operator.PlaceRandomly{}, Probability: 2},
@@ -48,8 +62,8 @@ func Adventurous() algo.Algorithm {
 }
 
 func Intense() algo.Algorithm {
-	policy := operator.NewChooseRandomOperator(
-		[]operator.OperatorScore{
+	policy := policy.NewChooseRandomOperator(
+		[]policy.OperatorScore{
 			{Operator: operator.PlaceOptimally{}, Probability: 2},
 			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
 			{Operator: operator.PlaceRandomly{}, Probability: 1},
@@ -61,8 +75,8 @@ func Intense() algo.Algorithm {
 }
 
 func Extreme() algo.Algorithm {
-	policy := operator.NewChooseRandomOperator(
-		[]operator.OperatorScore{
+	policy := policy.NewChooseRandomOperator(
+		[]policy.OperatorScore{
 			{Operator: operator.PlaceOptimally{}, Probability: 2},
 			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
 			{Operator: operator.PlaceRandomly{}, Probability: 1},

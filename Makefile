@@ -1,4 +1,3 @@
-
 BINARY_NAME=solve
 BUILD_DIR=./cmd/solve
 

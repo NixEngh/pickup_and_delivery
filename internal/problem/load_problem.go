@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-func LoadProblem(path string) (Problem, error) {
+func LoadProblem(path string) (*Problem, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return Problem{}, err
+		return nil, err
 	}
 	defer file.Close()
 
@@ -27,7 +27,7 @@ func LoadProblem(path string) (Problem, error) {
     scanner.Scan()
 	p.NumberOfNodes, err = strconv.Atoi(scanner.Text())
     if err != nil {
-        return Problem{}, fmt.Errorf("failed to parse number of nodes")
+        return nil, fmt.Errorf("failed to parse number of nodes")
     }
     
     // Read number of vehicles
@@ -36,7 +36,7 @@ func LoadProblem(path string) (Problem, error) {
     scanner.Scan()
     p.NumberOfVehicles, err = strconv.Atoi(scanner.Text())
     if err != nil {
-        return Problem{}, fmt.Errorf("failed to parse number of vehicles")
+        return nil, fmt.Errorf("failed to parse number of vehicles")
     }
 
     // Read vehicle details
@@ -87,7 +87,7 @@ func LoadProblem(path string) (Problem, error) {
         for _, call := range vehicleDetails[1:] {
             callIndex, err := strconv.Atoi(call)
             if err != nil {
-                return Problem{}, fmt.Errorf("failed to parse call index")
+                return nil, fmt.Errorf("failed to parse call index")
             }
 
             p.CallVehicleMap[callIndex] = append(p.CallVehicleMap[callIndex], vehicleIndex)
@@ -122,7 +122,7 @@ func LoadProblem(path string) (Problem, error) {
         currentCall.DeliveryTimeWindow.UpperBound, _ = strconv.Atoi(callDetails[8])
 
         if i != currentCall.Index {
-            return Problem{}, fmt.Errorf("call index mismatch")
+            return nil, fmt.Errorf("call index mismatch")
         }
 
         p.Calls[i] = currentCall
@@ -165,16 +165,16 @@ func LoadProblem(path string) (Problem, error) {
         p.Calls[callIndex].DestinationCostForVehicle[vehicleIndex] = destinationCost
     }
 
-	return p, nil
+	return &p, nil
 }
 
-func LoadProblems(directory string) ([]Problem, error) {
+func LoadProblems(directory string) ([]*Problem, error) {
 	files, err := os.ReadDir(directory)
 	if err != nil {
 		return nil, err
 	}
 
-	problems := make([]Problem, 0)
+	problems := make([]*Problem, 0)
 
 	for _, file := range files {
 		if file.IsDir() {

@@ -5,12 +5,13 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/NixEngh/pickup_and_delivery/internal/operator"
+	"github.com/NixEngh/pickup_and_delivery/internal/policy"
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
 	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
-func SimulatedAnnealing(operatorPolicy operator.OperatorPolicy) Algorithm {
+
+func SimulatedAnnealing(operatorPolicy policy.OperatorPolicy) Algorithm {
 	return func(problem *problem.Problem) (bestSolution *solution.Solution, bestCost int) {
 		finalTemperature := 0.1
 
@@ -26,7 +27,7 @@ func SimulatedAnnealing(operatorPolicy operator.OperatorPolicy) Algorithm {
 		for i := 0; i < 100; i++ {
 			utils.PrintLoadingBar(i, 100, 50)
 			neighbor := incubent.Copy()
-            operatorPolicy.Apply(neighbor)
+			operatorPolicy.Apply(neighbor)
 
 			neighborCost := neighbor.Cost()
 			deltaE := neighborCost - incubent.Cost()

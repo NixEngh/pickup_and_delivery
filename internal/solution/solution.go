@@ -98,22 +98,14 @@ func (s *Solution) MoveCallToOutsource(callNumber int, inds map[int][]int) (newI
 }
 
 func (s *Solution) PlaceCallRandomly(callNumber int) bool {
-	inds := utils.FindIndices(s.Solution, callNumber, 0)
 
-	inds = s.MoveCallToOutsource(callNumber, inds)
-	possibleVehicles := s.Problem.CallVehicleMap[callNumber]
-
-	feasibleInsertions := make([]utils.InsertionPoint, 0)
-
-	for _, vehicleIndex := range possibleVehicles {
-		currentInsertions := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
-		feasibleInsertions = append(feasibleInsertions, currentInsertions...)
-	}
-
+    feasibleInsertions := s.GetAllFeasible(callNumber)
 	if len(feasibleInsertions) == 0 {
 		return false
 	}
 	pick := rand.Intn(len(feasibleInsertions))
+
+    inds := utils.FindIndices(s.Solution, callNumber, 0)
 
 	s.InsertCall(callNumber, inds, feasibleInsertions[pick])
 	return true
