@@ -21,7 +21,7 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 			if newS.Cost() < bestSolution.Cost() {
 				bestSolution = S.Copy()
 			}
-			if acceptor.Accept(bestSolution, S) {
+			if acceptor.Accept(S, newS, bestSolution) {
 				S = newS
 			}
 		}
