@@ -3,6 +3,7 @@ package solution
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 	"github.com/NixEngh/pickup_and_delivery/internal/utils"
@@ -25,7 +26,7 @@ func (s *Solution) CalulateTimeSlack(tour []utils.CallNode, vehicleIndex int) []
 		constraint := currentNode.TimeWindow.UpperBound - max(currentTime, currentNode.TimeWindow.LowerBound)
 		waitTime := max(0, currentNode.TimeWindow.LowerBound-currentTime)
 
-        slack = min(slack, constraint) + waitTime
+		slack = min(slack, constraint) + waitTime
 
 		timeSlack[i] = slack
 	}
@@ -166,7 +167,7 @@ func storeCostDiff(i *utils.InsertionPoint, s *Solution, call problem.Call, tour
 func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []utils.InsertionPoint {
 	result := make([]utils.InsertionPoint, 0)
 
-	indices := utils.FindIndices(s.Solution, callNumber, 0)
+	indices := utils.FindIndices(s.Solution, callNumber)
 	callIndices := indices[callNumber]
 	zeroIndices := indices[0]
 
@@ -203,9 +204,9 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 			passedTimeCheck, arrivalAtNextNode = s.checkDeliveryTimeConstraint(call, tour, insertAt, arrivalAtNextNode, timeSlack)
 
 			if !passedTimeCheck {
-                if arrivalAtNextNode == 0 {
-                    break
-                }
+				if arrivalAtNextNode == 0 {
+					break
+				}
 				continue
 			}
 			storeCostDiff(&insertAt, s, call, tour)
@@ -217,7 +218,7 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 }
 
 func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
-	inds := utils.FindIndices(s.Solution, callNumber, 0)
+	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)
 	possibleVehicles := s.Problem.CallVehicleMap[callNumber]
@@ -229,5 +230,9 @@ func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
 		feasibleInsertions = append(feasibleInsertions, currentInsertions...)
 	}
 
-    return feasibleInsertions
+	sort.Slice(feasibleInsertions, func(i, j int) bool {
+		return feasibleInsertions[i].CostDiff < feasibleInsertions[j].CostDiff
+	})
+
+	return feasibleInsertions
 }

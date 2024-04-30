@@ -10,7 +10,7 @@ import (
 
 // Move an element in the solution
 func (s *Solution) MoveInSolution(from int, to int) {
-	zeroIndices := utils.FindIndices(s.Solution, 0)[0]
+	zeroIndices := utils.FindIndices(s.Solution)[0]
 
 	fromVehicle, toVehicle := 0, 0
 
@@ -50,7 +50,7 @@ func (s *Solution) MoveRelativeToVehicle(from int, newIndex utils.RelativeIndex)
 		return
 	}
 
-	zeroIndices := utils.FindIndices(s.Solution, 0)[0]
+	zeroIndices := utils.FindIndices(s.Solution)[0]
 	absoluteIndex := newIndex.ToAbsolute(zeroIndices)
 
 	if from < tourIndices[0] {
@@ -81,31 +81,32 @@ func (s *Solution) MoveCallToVehicle(callNumber int, inds map[int][]int, inserti
 	s.MoveRelativeToVehicle(newInds[1], insertionPoint.DeliveryIndex)
 }
 
+// Place a call at the first location of outsource
 func (s *Solution) MoveCallToOutsource(callNumber int, inds map[int][]int) (newInds map[int][]int) {
 	callInds := inds[callNumber]
 	zeroInds := inds[0]
 
+	moveTo := zeroInds[len(zeroInds)-1]
 	if callInds[0] > zeroInds[len(zeroInds)-1] {
-		return inds
+		moveTo = zeroInds[len(zeroInds)-1] + 1
 	}
 
-	moveTo := zeroInds[len(zeroInds)-1]
 	s.MoveInSolution(callInds[1], moveTo)
 	s.MoveInSolution(callInds[0], moveTo)
 
-	newInds = utils.FindIndices(s.Solution, 0, callNumber)
+	newInds = utils.FindIndices(s.Solution, callNumber)
 	return newInds
 }
 
 func (s *Solution) PlaceCallRandomly(callNumber int) bool {
 
-    feasibleInsertions := s.GetAllFeasible(callNumber)
+	feasibleInsertions := s.GetAllFeasible(callNumber)
 	if len(feasibleInsertions) == 0 {
 		return false
 	}
 	pick := rand.Intn(len(feasibleInsertions))
 
-    inds := utils.FindIndices(s.Solution, callNumber, 0)
+	inds := utils.FindIndices(s.Solution, callNumber)
 
 	s.InsertCall(callNumber, inds, feasibleInsertions[pick])
 	return true
@@ -194,7 +195,7 @@ func GenerateInitialSolution(p *problem.Problem) *Solution {
 	return &solution
 }
 
-func  GenerateRandomSolution(p *problem.Problem) *Solution {
+func GenerateRandomSolution(p *problem.Problem) *Solution {
 	vehicles := make([][]int, p.NumberOfVehicles+1)
 	for i := 0; i <= p.NumberOfVehicles; i++ {
 		vehicles[i] = make([]int, 0)
@@ -249,4 +250,3 @@ func  GenerateRandomSolution(p *problem.Problem) *Solution {
 
 	return &s
 }
-

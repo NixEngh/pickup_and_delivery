@@ -24,7 +24,7 @@ func TestMoveRelativeToVehicle(t *testing.T) {
 	solution := GenerateInitialSolution(problem)
 	for i := 0; i < 100; i++ {
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := utils.FindIndices(solution.Solution, call, 0)
+		indices := utils.FindIndices(solution.Solution, call)
 		indices = solution.MoveCallToOutsource(call, indices)
 		vehicle := rand.Intn(problem.NumberOfVehicles) + 1
 		tour := utils.GetCallNodeTour(problem, solution.Solution, vehicle)
@@ -89,14 +89,14 @@ func TestCalculateTimeSlack(t *testing.T) {
 }
 
 func CreateRandomFeasible(s *Solution, steps int) {
-    generator := rand.New(rand.NewSource(1))
+	generator := rand.New(rand.NewSource(1))
 
 	numberOfMoves := 100
 	for i := 0; i < numberOfMoves; i++ {
 		vehicleIndex := generator.Intn(s.Problem.NumberOfVehicles) + 1
 
 		callNumber := generator.Intn(s.Problem.NumberOfCalls) + 1
-		inds := utils.FindIndices(s.Solution, callNumber, 0)
+		inds := utils.FindIndices(s.Solution, callNumber)
 		inds = s.MoveCallToOutsource(callNumber, inds)
 
 		validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
@@ -104,9 +104,9 @@ func CreateRandomFeasible(s *Solution, steps int) {
 			continue
 		}
 		s.InsertCall(callNumber, inds, validIndices[generator.Intn(len(validIndices))])
-        if !s.Feasible() {
-            panic(fmt.Sprintf("Something very wrong:\n  %v,\nvehicle: %d,\ncall: %d \ntour: %v", s.infeasibleReason,vehicleIndex,callNumber, utils.GetTour(s.Solution, vehicleIndex)))
-        }
+		if !s.Feasible() {
+			panic(fmt.Sprintf("Something very wrong:\n  %v,\nvehicle: %d,\ncall: %d \ntour: %v", s.infeasibleReason, vehicleIndex, callNumber, utils.GetTour(s.Solution, vehicleIndex)))
+		}
 	}
 }
 
@@ -123,7 +123,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 		CreateRandomFeasible(solution, 100)
 
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := utils.FindIndices(solution.Solution, 0, call)
+		indices := utils.FindIndices(solution.Solution, call)
 
 		solution.MoveCallToOutsource(call, indices)
 
@@ -135,7 +135,7 @@ func TestFindFeasibleInsertion(t *testing.T) {
 			testSolution := solution.Copy()
 			for i := 0; i < len(tour)+1; i++ {
 				for j := i; j < len(tour)+1; j++ {
-					inds := utils.FindIndices(testSolution.Solution, call, 0)
+					inds := utils.FindIndices(testSolution.Solution, call)
 					inds = testSolution.MoveCallToOutsource(call, inds)
 
 					comparisonPoint := utils.InsertionPoint{
@@ -236,29 +236,29 @@ func TestSpecificFindFeasible(t *testing.T) {
 	twelveI := utils.InsertionPoint{
 		PickupIndex: utils.RelativeIndex{
 			VehicleIndex: 2,
-			Index: 0,
+			Index:        0,
 		},
 		DeliveryIndex: utils.RelativeIndex{
 			VehicleIndex: 2,
-			Index: 0,
+			Index:        0,
 		},
 	}
 	sixteenI := utils.InsertionPoint{
 		PickupIndex: utils.RelativeIndex{
 			VehicleIndex: 2,
-			Index: 2,
+			Index:        2,
 		},
 		DeliveryIndex: utils.RelativeIndex{
 			VehicleIndex: 2,
-			Index: 2,
+			Index:        2,
 		},
 	}
 	// tour: 12 12 16 16
-	inds := utils.FindIndices(solution.Solution, 0, 12)
+	inds := utils.FindIndices(solution.Solution, 12)
 	solution.InsertCall(12, inds, twelveI)
-	inds = utils.FindIndices(solution.Solution, 0, 16)
+	inds = utils.FindIndices(solution.Solution, 16)
 	solution.InsertCall(16, inds, sixteenI)
-	inds = utils.FindIndices(solution.Solution, 0, 10)
+	inds = utils.FindIndices(solution.Solution, 10)
 	tour := utils.GetCallNodeTour(problem, solution.Solution, 2)
 	intTour := utils.GetTour(solution.Solution, 2)
 
@@ -308,7 +308,7 @@ func TestGetCostImprovement(t *testing.T) {
 	solution := GenerateInitialSolution(problem)
 	for i := 0; i < 100; i++ {
 		call := rand.Intn(problem.NumberOfCalls) + 1
-		indices := utils.FindIndices(solution.Solution, 0, call)
+		indices := utils.FindIndices(solution.Solution, call)
 		indices = solution.MoveCallToOutsource(call, indices)
 
 		for vehicleIndex := 1; vehicleIndex <= problem.NumberOfVehicles; vehicleIndex++ {

@@ -7,9 +7,10 @@ type Operator interface {
 }
 
 type Insert interface {
-	Insert(s *solution.Solution, calls []int)
+	Reinsert(s *solution.Solution, calls []int)
 }
 
+// Doesn't actually remove, but chooses calls
 type Removal interface {
-	Choose(s *solution.Solution, n int) []int
+	Choose(s *solution.Solution) []int
 }

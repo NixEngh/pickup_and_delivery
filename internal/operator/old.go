@@ -18,7 +18,7 @@ func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 
 	vehicleIndex := possibleVehicles[rand.Intn(len(possibleVehicles))]
 
-	indices := utils.FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, callIndex)
 	s.MoveCallToOutsource(callIndex, indices)
 
 	validIndices := s.GetVehicleInsertionPoints(vehicleIndex, callIndex)
@@ -30,7 +30,7 @@ func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 		return math.MaxInt32
 	}
 	insertionIndex := validIndices[0]
-	indices = utils.FindIndices(s.Solution, 0, callIndex)
+	indices = utils.FindIndices(s.Solution, callIndex)
 	s.InsertCall(callIndex, indices, insertionIndex)
 
 	return s.Cost()
@@ -50,7 +50,7 @@ func (o OldOneReinsert) Apply(s *solution.Solution) int {
 	moveInVehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
-	inds := utils.FindIndices(s.Solution, call, 0)
+	inds := utils.FindIndices(s.Solution, call)
 	if moveInVehicle {
 		o.moveCallInVehicle(s, inds[call])
 		return s.Cost()
@@ -129,7 +129,7 @@ func (o PlaceOptimally) ApplyWithoutConc(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
-	indices := utils.FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, callIndex)
 	indices = s.MoveCallToOutsource(callIndex, indices)
 	insertionPoints := make([]utils.InsertionPoint, 0)
 
@@ -168,7 +168,7 @@ func (o PlaceOptimally) Apply(s *solution.Solution) int {
 
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
-	indices := utils.FindIndices(s.Solution, 0, callIndex)
+	indices := utils.FindIndices(s.Solution, callIndex)
 	indices = s.MoveCallToOutsource(callIndex, indices)
 
 	var wg = sync.WaitGroup{}

@@ -13,10 +13,11 @@ import (
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 )
 
-func FindIndices[T comparable](slice []T, values ...T) map[T][]int {
-	indicesMap := make(map[T][]int)
-    for index, element := range slice {
-        for _, value := range values {
+func FindIndices(slice []int, values ...int) map[int][]int {
+	indicesMap := make(map[int][]int)
+	values = append(values, 0)
+	for index, element := range slice {
+		for _, value := range values {
 			if element == value {
 				indicesMap[value] = append(indicesMap[value], index)
 			}
@@ -45,7 +46,7 @@ func MoveElement[T comparable](s []T, source, destination int) {
 
 // returns the indices such that solution[start_ind:end_ind] gives you the calls in the tour. If the length of the tour is 0, you get end_ind,end_ind
 func GetTourIndices(solution []int, vehicleIndex int) []int {
-	zeroIndexes := FindIndices(solution, 0)[0]
+	zeroIndexes := FindIndices(solution)[0]
 	start_ind := 0
 
 	if vehicleIndex != 1 {
@@ -110,7 +111,6 @@ func PrintLoadingBar(current int, total int, steps int) {
 		fmt.Printf("\r[%s] %.0f%%", bar, percentage)
 	}
 }
-
 
 type CSVTableRow struct {
 	Algorithm    string
