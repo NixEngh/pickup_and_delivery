@@ -22,10 +22,10 @@ func RunAssignment4(problems []*problem.Problem) {
 func EqualProbability() algo.Algorithm {
 
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.PlaceOptimally{}, Probability: 1},
-			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
-			{Operator: operator.PlaceRandomly{}, Probability: 1},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.PlaceOptimally{}, Probability: 1},
+			{Operator: &operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
+			{Operator: &operator.PlaceRandomly{}, Probability: 1},
 		},
 		"Equal Probability",
 	)
@@ -36,10 +36,10 @@ func EqualProbability() algo.Algorithm {
 func Moderate() algo.Algorithm {
 
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.PlaceOptimally{}, Probability: 1},
-			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
-			{Operator: operator.PlaceRandomly{}, Probability: 2},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.PlaceOptimally{}, Probability: 1},
+			{Operator: &operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
+			{Operator: &operator.PlaceRandomly{}, Probability: 2},
 		},
 		"Moderate",
 	)
@@ -48,10 +48,10 @@ func Moderate() algo.Algorithm {
 
 func Adventurous() algo.Algorithm {
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.PlaceOptimally{}, Probability: 1},
-			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
-			{Operator: operator.PlaceRandomly{}, Probability: 2},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.PlaceOptimally{}, Probability: 1},
+			{Operator: &operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
+			{Operator: &operator.PlaceRandomly{}, Probability: 2},
 		},
 		"Adventurous",
 	)
@@ -60,10 +60,10 @@ func Adventurous() algo.Algorithm {
 
 func Intense() algo.Algorithm {
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.PlaceOptimally{}, Probability: 2},
-			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
-			{Operator: operator.PlaceRandomly{}, Probability: 1},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.PlaceOptimally{}, Probability: 2},
+			{Operator: &operator.PlaceOptimallyInRandomVehicle{}, Probability: 2},
+			{Operator: &operator.PlaceRandomly{}, Probability: 1},
 		},
 		"Intense",
 	)
@@ -72,10 +72,10 @@ func Intense() algo.Algorithm {
 
 func Extreme() algo.Algorithm {
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.PlaceOptimally{}, Probability: 2},
-			{Operator: operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
-			{Operator: operator.PlaceRandomly{}, Probability: 1},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.PlaceOptimally{}, Probability: 2},
+			{Operator: &operator.PlaceOptimallyInRandomVehicle{}, Probability: 1},
+			{Operator: &operator.PlaceRandomly{}, Probability: 1},
 		},
 		"Extreme",
 	)

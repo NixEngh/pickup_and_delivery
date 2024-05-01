@@ -12,7 +12,7 @@ import (
 
 type PlaceOptimallyInRandomVehicle struct{}
 
-func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
+func (o *PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
@@ -38,7 +38,7 @@ func (o PlaceOptimallyInRandomVehicle) Apply(s *solution.Solution) int {
 
 type PlaceRandomly struct{}
 
-func (o PlaceRandomly) Apply(s *solution.Solution) int {
+func (o *PlaceRandomly) Apply(s *solution.Solution) int {
 	callNumber := rand.Intn(s.Problem.NumberOfCalls) + 1
 	s.PlaceCallRandomly(callNumber)
 	return s.Cost()
@@ -46,7 +46,7 @@ func (o PlaceRandomly) Apply(s *solution.Solution) int {
 
 type OldOneReinsert struct{}
 
-func (o OldOneReinsert) Apply(s *solution.Solution) int {
+func (o *OldOneReinsert) Apply(s *solution.Solution) int {
 	moveInVehicle := rand.Float64() < 0.5
 	call := rand.Intn(s.Problem.NumberOfCalls) + 1
 
@@ -91,7 +91,7 @@ func (o OldOneReinsert) Apply(s *solution.Solution) int {
 	return s.Cost()
 }
 
-func (o OldOneReinsert) moveCallInVehicle(s *solution.Solution, callInds []int) bool {
+func (o *OldOneReinsert) moveCallInVehicle(s *solution.Solution, callInds []int) bool {
 	solution := s.Solution
 	pairs := []struct{ callIndex, delta int }{
 		{callInds[0], -1},
@@ -125,7 +125,7 @@ func (o OldOneReinsert) moveCallInVehicle(s *solution.Solution, callInds []int) 
 
 type PlaceOptimally struct{}
 
-func (o PlaceOptimally) ApplyWithoutConc(s *solution.Solution) int {
+func (o *PlaceOptimally) ApplyWithoutConc(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]
 
@@ -163,7 +163,7 @@ func (o PlaceOptimally) ApplyWithoutConc(s *solution.Solution) int {
 }
 
 // PlaceOptimally picks a call and concurrently checks the best possible location to place it
-func (o PlaceOptimally) Apply(s *solution.Solution) int {
+func (o *PlaceOptimally) Apply(s *solution.Solution) int {
 	callIndex := rand.Intn(s.Problem.NumberOfCalls) + 1
 
 	possibleVehicles := s.Problem.CallVehicleMap[callIndex]

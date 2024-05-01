@@ -8,7 +8,7 @@ type CombineOperator struct {
 	insert  Insert
 }
 
-func NewCombineOperator(nCalls int, removal Removal, insert Insert, name string) *CombineOperator {
+func NewCombineOperator(removal Removal, insert Insert, name string) *CombineOperator {
 	return &CombineOperator{name, removal, insert}
 }
 

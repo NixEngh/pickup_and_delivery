@@ -7,11 +7,11 @@ import (
 )
 
 type ChooseRandomOperator struct {
-	Operators []OperatorScore
+	Operators []*OperatorStruct
 	name      string
 }
 
-func NewChooseRandomOperator(operators []OperatorScore, name string) *ChooseRandomOperator {
+func NewChooseRandomOperator(operators []*OperatorStruct, name string) *ChooseRandomOperator {
 
 	return &ChooseRandomOperator{
 		Operators: operators,
@@ -33,7 +33,7 @@ func (c *ChooseRandomOperator) Name() string {
 	return c.name
 }
 
-func ChooseWeightedOperator(operators []OperatorScore) *OperatorScore {
+func ChooseWeightedOperator(operators []*OperatorStruct) *OperatorStruct {
 	var total float64
 	for _, op := range operators {
 		total += op.Probability
@@ -42,7 +42,7 @@ func ChooseWeightedOperator(operators []OperatorScore) *OperatorScore {
 	r := rand.Float64() * total
 	for _, op := range operators {
 		if r -= op.Probability; r < 0 {
-			return &op
+			return op
 		}
 	}
 

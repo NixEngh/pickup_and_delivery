@@ -7,11 +7,18 @@ import (
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
 )
 
-type OperatorScore struct {
+type OperatorStruct struct {
 	Operator    operator.Operator
 	Probability float64
 	score       int
 	timesUsed   int
+}
+
+func NewOperatorStruct(o operator.Operator, p float64) *OperatorStruct {
+	return &OperatorStruct{
+		Operator:    o,
+		Probability: p,
+	}
 }
 
 type OperatorPolicy interface {

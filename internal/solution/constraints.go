@@ -20,11 +20,9 @@ func (s *Solution) VehicleCumulativeTimes(vehicleIndex int) []int {
 	return s.vehicleCumulativeTimes[vehicleIndex]
 }
 
-func (s *Solution) VehicleCumulativeCosts(vehicleIndex int) []int {
-	if _, ok := s.VehiclesToCheckCost[vehicleIndex]; ok {
-		s.UpdateCosts()
-	}
-	return s.vehicleCumulativeCosts[vehicleIndex]
+func (s *Solution) CallCosts() []int {
+	s.UpdateCosts()
+	return s.callCosts
 }
 
 // Updates (if relevant) and returns the cost of the solution
@@ -74,7 +72,9 @@ func (s *Solution) OutSourceCostFunction() int {
 	found := make(map[int]struct{})
 	for i := len(s.Solution) - 1; s.Solution[i] != 0; i-- {
 		if _, ok := found[s.Solution[i]]; ok {
-			total += s.Problem.Calls[s.Solution[i]].CostOfNotTransporting
+			call := s.Problem.Calls[s.Solution[i]]
+			total += call.CostOfNotTransporting
+			s.callCosts[call.Index] = call.CostOfNotTransporting
 		}
 		found[s.Solution[i]] = struct{}{}
 	}
@@ -91,30 +91,31 @@ func (s *Solution) VehicleCostFunction(vehicleIndex int) int {
 		return s.OutSourceCostFunction()
 	}
 
-	found := make(map[int]struct{})
-	tour := utils.GetTour(solution, vehicleIndex)
+	tour := utils.GetCallNodeTour(problem, solution, vehicleIndex)
 
 	vehicle := problem.Vehicles[vehicleIndex]
 	total := 0
 	previousNode := vehicle.HomeNode
 
-	s.vehicleCumulativeCosts[vehicleIndex] = make([]int, len(tour))
+	var prevCall int
 
-	for i, call := range tour {
-		_, isDelivery := found[call]
-		currentCall := problem.Calls[call]
-
-		if !isDelivery {
-			total += vehicle.TravelCosts[previousNode][currentCall.OriginNode]
-			total += currentCall.OriginCostForVehicle[vehicleIndex]
-			previousNode = currentCall.OriginNode
-		} else {
-			total += vehicle.TravelCosts[previousNode][currentCall.DestinationNode]
-			total += currentCall.DestinationCostForVehicle[vehicleIndex]
-			previousNode = currentCall.DestinationNode
+	for i, callNode := range tour {
+		if !callNode.IsDelivery {
+			s.callCosts[callNode.CallIndex] = 0
 		}
-		s.vehicleCumulativeCosts[vehicleIndex][i] = total
-		found[call] = struct{}{}
+
+		total += vehicle.TravelCosts[previousNode][callNode.Node]
+		total += callNode.Cost
+
+		s.callCosts[callNode.CallIndex] += callNode.Cost
+		s.callCosts[callNode.CallIndex] += vehicle.TravelCosts[previousNode][callNode.Node]
+
+		if i > 0 {
+			s.callCosts[prevCall] += vehicle.TravelCosts[previousNode][callNode.Node]
+		}
+
+		previousNode = callNode.Node
+		prevCall = callNode.CallIndex
 	}
 
 	return total
@@ -164,7 +165,7 @@ func (s *Solution) IsVehicleFeasible(vehicleIndex int) bool {
 		s.vehicleCumulativeTimes[vehicleIndex][i] = timeAtCallNode
 
 		if timeAtCallNode > callNode.TimeWindow.UpperBound {
-            s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d for vehicle: %d\ncumulative times: %v", timeAtCallNode, i, callNode.CallIndex, callNode.TimeWindow.UpperBound, vehicleIndex, s.vehicleCumulativeTimes[vehicleIndex])
+			s.infeasibleReason = fmt.Sprintf("The time %d at index %d was too high for call %d with upperbound %d for vehicle: %d\ncumulative times: %v", timeAtCallNode, i, callNode.CallIndex, callNode.TimeWindow.UpperBound, vehicleIndex, s.vehicleCumulativeTimes[vehicleIndex])
 			return false
 		}
 

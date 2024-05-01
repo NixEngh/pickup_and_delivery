@@ -8,17 +8,17 @@ import (
 )
 
 func RunAssignment3(problems []*problem.Problem) {
-    algorithms := map[string]algo.Algorithm{
-        "Local Search": LocalSearch(),
-    }
+	algorithms := map[string]algo.Algorithm{
+		"Local Search": LocalSearch(),
+	}
 
-    Run(algorithms, problems)
+	Run(algorithms, problems)
 }
 
 func LocalSearch() algo.Algorithm {
 	policy := policy.NewChooseRandomOperator(
-		[]policy.OperatorScore{
-			{Operator: operator.OldOneReinsert{}, Probability: 1},
+		[]*policy.OperatorStruct{
+			{Operator: &operator.OldOneReinsert{}, Probability: 1},
 		},
 		"Old OneReinsert",
 	)

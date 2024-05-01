@@ -131,11 +131,8 @@ func (s *Solution) Copy() *Solution {
 		feasVehicles[vehicle] = true
 	}
 
-	copyVehicleCumulativeCosts := make([][]int, len(s.vehicleCumulativeCosts))
-	for i := range s.vehicleCumulativeCosts {
-		copyVehicleCumulativeCosts[i] = make([]int, len(s.vehicleCumulativeCosts[i]))
-		copy(copyVehicleCumulativeCosts[i], s.vehicleCumulativeCosts[i])
-	}
+	copyCallCosts := make([]int, len(s.callCosts))
+	copy(copyCallCosts, s.callCosts)
 
 	copyVehicleCumulativeCapacities := make([][]int, len(s.vehicleCumulativeCapacities))
 	for i := range s.vehicleCumulativeCapacities {
@@ -156,7 +153,7 @@ func (s *Solution) Copy() *Solution {
 		OutSourceCost:               s.OutSourceCost,
 		VehiclesToCheckCost:         costVehicles,
 		VehiclesToCheckFeasibility:  feasVehicles,
-		vehicleCumulativeCosts:      copyVehicleCumulativeCosts,
+		callCosts:                   copyCallCosts,
 		vehicleCumulativeCapacities: copyVehicleCumulativeCapacities,
 		vehicleCumulativeTimes:      copyVehicleCumulativeTimes,
 		feasible:                    s.feasible,
@@ -183,7 +180,7 @@ func GenerateInitialSolution(p *problem.Problem) *Solution {
 		OutSourceCost:               0,
 		VehiclesToCheckCost:         make(map[int]bool, 0),
 		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
-		vehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		callCosts:                   make([]int, p.NumberOfCalls+1),
 		vehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
 		vehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
 		cost:                        0,
@@ -231,7 +228,7 @@ func GenerateRandomSolution(p *problem.Problem) *Solution {
 		OutSourceCost:               0,
 		VehiclesToCheckCost:         make(map[int]bool, 0),
 		VehiclesToCheckFeasibility:  make(map[int]bool, 0),
-		vehicleCumulativeCosts:      make([][]int, p.NumberOfVehicles+1),
+		callCosts:                   make([]int, p.NumberOfCalls+1),
 		vehicleCumulativeCapacities: make([][]int, p.NumberOfVehicles+1),
 		vehicleCumulativeTimes:      make([][]int, p.NumberOfVehicles+1),
 	}

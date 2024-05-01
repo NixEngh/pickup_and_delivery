@@ -6,34 +6,33 @@ import (
 )
 
 type AdaptivePolicy struct {
-	operators []OperatorScore
+	operators []*OperatorStruct
 }
 
-func NewAdaptivePolicy() *AdaptivePolicy {
+func NewAdaptivePolicy(operators ...operator.Operator) *AdaptivePolicy {
+
+	operatorStructs := make([]*OperatorStruct, len(operators))
+
+	for i, op := range operators {
+		operatorStructs[i] = &OperatorStruct{
+			Operator: op,
+		}
+	}
+
 	policy := AdaptivePolicy{
-		operators: []OperatorScore{
-			{
-				Operator: operator.NewCombineOperator(
-					5,
-					operator.NewRemoveRandom(5),
-					operator.NewInsertGreedy(),
-					"RemoveRandom + InsertGreedy",
-				),
-				Probability: 1,
-			},
-		},
+		operators: operatorStructs,
 	}
 
 	return &policy
 
 }
 
-func (p AdaptivePolicy) Apply(s *solution.Solution) {
+func (p *AdaptivePolicy) Apply(s *solution.Solution) {
 	os := ChooseWeightedOperator(p.operators)
 	operator := os.Operator
 	operator.Apply(s)
 }
 
-func (p AdaptivePolicy) Name() string {
+func (p *AdaptivePolicy) Name() string {
 	return "AdaptivePolicy"
 }
