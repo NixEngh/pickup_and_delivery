@@ -20,22 +20,27 @@ func Attempt() algo.Algorithm {
 	pol := policy.NewAdaptivePolicy(
 
 		operator.NewCombineOperator(
-			operator.NewRemoveRandom(20),
+			operator.NewRemoveRandom(10),
 			operator.NewInsertGreedy(),
 			"Operator 1",
 		),
 		operator.NewCombineOperator(
-			operator.NewRemoveRandom(5),
+			operator.NewRemoveRandom(20),
 			operator.NewInsertGreedy(),
 			"Operator 3",
 		),
 		operator.NewCombineOperator(
-			operator.NewRemoveCostly(20),
+			operator.NewRemoveRandom(40),
 			operator.NewInsertGreedy(),
 			"Operator 4",
 		),
 		operator.NewCombineOperator(
-			operator.NewRemoveCostly(5),
+			operator.NewRemoveCostly(10),
+			operator.NewInsertGreedy(),
+			"Operator 4",
+		),
+		operator.NewCombineOperator(
+			operator.NewRemoveCostly(20),
 			operator.NewInsertGreedy(),
 			"Operator 5",
 		),

@@ -29,7 +29,7 @@ func NewAdaptivePolicy(operators ...operator.Operator) *AdaptivePolicy {
 	policy := &AdaptivePolicy{
 		operators:     operatorStructs,
 		r:             0.1,
-		segmentLength: 250,
+		segmentLength: 100,
 		bestCost:      math.MaxInt32,
 		compareSet:    NewCompareSet(),
 	}
@@ -61,11 +61,11 @@ func (p *AdaptivePolicy) UpdateScore(costBefore, newCost int, s *solution.Soluti
 	}
 	if newCost < p.bestCost {
 		p.bestCost = newCost
-		scoreToAdd += 10
+		scoreToAdd += 4
 	}
 
 	if newCost < costBefore {
-		scoreToAdd += 1
+		scoreToAdd += 2
 	}
 
 	score.score += scoreToAdd

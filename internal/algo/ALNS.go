@@ -36,10 +36,9 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 				S = newS
 			}
 			if iterationsSinceNewBest > allowedIterations {
-				for i := 0; i < int(float64(problem.NumberOfCalls)*0.2); i++ {
+				for i := 0; i < 25; i++ {
 					escape.Apply(S)
 				}
-				S = bestSolution.Copy()
 				iterationsSinceNewBest = 0
 			}
 		}
