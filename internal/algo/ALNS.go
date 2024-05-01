@@ -1,6 +1,8 @@
 package algo
 
 import (
+	"fmt"
+
 	"github.com/NixEngh/pickup_and_delivery/internal/policy"
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
@@ -14,6 +16,8 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 		S := bestSolution.Copy()
 		var newS *solution.Solution
 
+		fmt.Println("ALNS for operator policy: ", operatorPolicy.Name())
+
 		for !stopper.CheckStop() {
 			newS = S.Copy()
 			operatorPolicy.Apply(S)
@@ -25,6 +29,9 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 				S = newS
 			}
 		}
+		stopper.Reset()
+		fmt.Println()
+		fmt.Println("ALNS finished")
 
 		return bestSolution, bestSolution.Cost()
 	}

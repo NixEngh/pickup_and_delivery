@@ -2,8 +2,8 @@ package run
 
 import (
 	"github.com/NixEngh/pickup_and_delivery/internal/algo"
+	"github.com/NixEngh/pickup_and_delivery/internal/policy"
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
-	"github.com/NixEngh/pickup_and_delivery/internal/solution"
 )
 
 func RunFinalExam(problems []*problem.Problem) {
@@ -16,7 +16,10 @@ func RunFinalExam(problems []*problem.Problem) {
 }
 
 func AlwaysOptimal() algo.Algorithm {
-	return func(problem *problem.Problem) (bestSolution *solution.Solution, bestCost int) {
-		return
-	}
+	pol := policy.NewAdaptivePolicy()
+	iterations := 10000
+	acceptor := algo.NewIterationR2RAcceptor(iterations)
+	stopper := algo.NewIterationBasedStopper(iterations)
+
+	return algo.ALNS(pol, acceptor, stopper)
 }

@@ -43,6 +43,7 @@ func (s *Solution) MoveRelativeToVehicle(from int, newIndex utils.RelativeIndex)
 
 	if tourIndices[0] == tourIndices[1] {
 		if newIndex.Index != 0 {
+			fmt.Println(newIndex)
 			fmt.Println(tour)
 			panic("Index out of bounds")
 		}

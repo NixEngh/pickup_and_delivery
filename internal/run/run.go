@@ -41,7 +41,6 @@ func RunExperiment(problem *problem.Problem, algorithmName string, algorithm alg
 
 	var averageCost float64 = 0
 	for _, cost := range costs {
-		fmt.Println(cost)
 		averageCost += float64(cost)
 	}
 	averageCost /= float64(len(costs))

@@ -12,11 +12,11 @@ type AdaptivePolicy struct {
 func NewAdaptivePolicy() *AdaptivePolicy {
 	policy := AdaptivePolicy{
 		operators: []OperatorScore{
-			OperatorScore{
+			{
 				Operator: operator.NewCombineOperator(
 					5,
-					operator.RemoveRandom{},
-					operator.InsertGreedy{},
+					operator.NewRemoveRandom(5),
+					operator.NewInsertGreedy(),
 					"RemoveRandom + InsertGreedy",
 				),
 				Probability: 1,
@@ -24,12 +24,16 @@ func NewAdaptivePolicy() *AdaptivePolicy {
 		},
 	}
 
+	return &policy
+
 }
 
 func (p AdaptivePolicy) Apply(s *solution.Solution) {
-
+	os := ChooseWeightedOperator(p.operators)
+	operator := os.Operator
+	operator.Apply(s)
 }
 
 func (p AdaptivePolicy) Name() string {
-	return ""
+	return "AdaptivePolicy"
 }

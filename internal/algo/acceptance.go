@@ -8,6 +8,7 @@ import (
 
 type Acceptor interface {
 	Accept(s, newS, bestS *solution.Solution) bool
+	Reset()
 }
 
 type GreedyAcceptor struct{}
@@ -30,6 +31,10 @@ func (r *IterationR2RAcceptor) Accept(s, newS, bestS *solution.Solution) bool {
 	D := 0.2 * (float64(r.iterations-r.i) / float64(r.iterations)) * float64(bestS.Cost())
 
 	return float64(newS.Cost()) < float64(bestS.Cost())+D
+}
+
+func (r *IterationR2RAcceptor) Reset() {
+	r.i = 0
 }
 
 type TimeR2RAcceptor struct {

@@ -1,9 +1,14 @@
 package algo
 
-import "time"
+import (
+	"time"
+
+	"github.com/NixEngh/pickup_and_delivery/internal/utils"
+)
 
 type Stopper interface {
 	CheckStop() bool
+	Reset()
 }
 
 type IterationBasedStopper struct {
@@ -17,7 +22,12 @@ func NewIterationBasedStopper(iterations int) *IterationBasedStopper {
 
 func (i *IterationBasedStopper) CheckStop() bool {
 	i.i++
-	return i.i <= i.iterations
+	utils.PrintLoadingBar(i.i, i.iterations, 50)
+	return i.i > i.iterations
+}
+
+func (i *IterationBasedStopper) Reset() {
+	i.i = 0
 }
 
 type TimeBasedStopper struct {

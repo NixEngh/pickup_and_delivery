@@ -18,8 +18,8 @@ func (r *RemoveRandom) Choose(s *solution.Solution) []int {
 	calls := rand.Perm(s.Problem.NumberOfCalls)[:r.n]
 
 	res := make([]int, r.n)
-	for _, c := range calls {
-		res = append(res, c)
+	for i, c := range calls {
+		res[i] = c + 1
 	}
 	return res
 }
