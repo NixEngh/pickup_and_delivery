@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"sync"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/problem"
 	"github.com/NixEngh/pickup_and_delivery/internal/utils"
@@ -217,7 +218,7 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 	return result
 }
 
-func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
+func (s *Solution) GetAllFeasibleNonConcurrent(callNumber int) []utils.InsertionPoint {
 	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)
@@ -228,6 +229,43 @@ func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
 	for _, vehicleIndex := range possibleVehicles {
 		currentInsertions := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
 		feasibleInsertions = append(feasibleInsertions, currentInsertions...)
+	}
+
+	sort.Slice(feasibleInsertions, func(i, j int) bool {
+		return feasibleInsertions[i].CostDiff < feasibleInsertions[j].CostDiff
+	})
+
+	return feasibleInsertions
+}
+
+func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
+	inds := utils.FindIndices(s.Solution, callNumber)
+
+	inds = s.MoveCallToOutsource(callNumber, inds)
+	possibleVehicles := s.Problem.CallVehicleMap[callNumber]
+
+	feasibleInsertions := make([]utils.InsertionPoint, 0)
+	feasibleInsertionsChan := make(chan []utils.InsertionPoint, len(possibleVehicles))
+	wg := sync.WaitGroup{}
+
+	s.Feasible()
+
+	for _, vehicleIndex := range possibleVehicles {
+		wg.Add(1)
+		go func(vehicleIndex int) {
+			defer wg.Done()
+			currentInsertions := s.GetVehicleInsertionPoints(vehicleIndex, callNumber)
+			feasibleInsertionsChan <- currentInsertions
+		}(vehicleIndex)
+	}
+
+	go func() {
+		wg.Wait()
+		close(feasibleInsertionsChan)
+	}()
+
+	for insertions := range feasibleInsertionsChan {
+		feasibleInsertions = append(feasibleInsertions, insertions...)
 	}
 
 	sort.Slice(feasibleInsertions, func(i, j int) bool {

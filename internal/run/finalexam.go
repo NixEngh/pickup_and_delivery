@@ -9,48 +9,42 @@ import (
 
 func RunFinalExam(problems []*problem.Problem) {
 	algorithms := map[string]algo.Algorithm{
-		"Mix": Mix(),
+		"Attempt": Attempt(),
 	}
 
 	Run(algorithms, problems)
 
 }
 
-func Optimal() algo.Algorithm {
+func Attempt() algo.Algorithm {
 	pol := policy.NewAdaptivePolicy(
+
 		operator.NewCombineOperator(
-			operator.NewRemoveCostly(5),
+			operator.NewRemoveRandom(20),
 			operator.NewInsertGreedy(),
-			"RemoveCostly + InsertGreedy",
+			"Operator 1",
 		),
-	)
-
-	iterations := 1000
-
-	acceptor := algo.NewIterationR2RAcceptor(iterations)
-
-	stopper := algo.NewIterationBasedStopper(iterations)
-
-	return algo.ALNS(pol, acceptor, stopper)
-
-}
-
-func Mix() algo.Algorithm {
-	pol := policy.NewAdaptivePolicy(
 		operator.NewCombineOperator(
 			operator.NewRemoveRandom(5),
 			operator.NewInsertGreedy(),
-			"RemoveRandom + InsertGreedy",
+			"Operator 3",
 		),
-
+		operator.NewCombineOperator(
+			operator.NewRemoveCostly(20),
+			operator.NewInsertGreedy(),
+			"Operator 4",
+		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(5),
 			operator.NewInsertGreedy(),
-			"RemoveCostly + InsertGreedy",
+			"Operator 5",
 		),
 	)
-	iterations := 1000
+
+	iterations := 10000
+
 	acceptor := algo.NewIterationR2RAcceptor(iterations)
+
 	stopper := algo.NewIterationBasedStopper(iterations)
 
 	return algo.ALNS(pol, acceptor, stopper)
