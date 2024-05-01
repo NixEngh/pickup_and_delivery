@@ -1,23 +1,25 @@
 package operator
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
 )
 
 type RemoveRandom struct {
-	n int
+	percent int
 }
 
-func NewRemoveRandom(n int) *RemoveRandom {
-	return &RemoveRandom{n: n}
+func NewRemoveRandom(percent int) *RemoveRandom {
+	return &RemoveRandom{percent: percent}
 }
 
 func (r *RemoveRandom) Choose(s *solution.Solution) []int {
-	calls := rand.Perm(s.Problem.NumberOfCalls)[:r.n]
+	n := int(math.Ceil(float64(s.Problem.NumberOfCalls) * float64(r.percent) / 100))
+	calls := rand.Perm(s.Problem.NumberOfCalls)[:n]
 
-	res := make([]int, r.n)
+	res := make([]int, n)
 	for i, c := range calls {
 		res[i] = c + 1
 	}

@@ -1,17 +1,18 @@
 package operator
 
 import (
+	"math"
 	"sort"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
 )
 
 type RemoveCostly struct {
-	n int
+	percent int
 }
 
-func NewRemoveCostly(n int) *RemoveCostly {
-	return &RemoveCostly{n: n}
+func NewRemoveCostly(percent int) *RemoveCostly {
+	return &RemoveCostly{percent: percent}
 }
 
 type valueIndex struct {
@@ -20,6 +21,7 @@ type valueIndex struct {
 }
 
 func (r *RemoveCostly) Choose(s *solution.Solution) []int {
+	n := int(math.Ceil(float64(s.Problem.NumberOfCalls) * float64(r.percent) / 100))
 	callCosts := s.CallCosts()
 
 	valueIndices := make([]valueIndex, len(callCosts))
@@ -31,8 +33,8 @@ func (r *RemoveCostly) Choose(s *solution.Solution) []int {
 		return valueIndices[i].cost > valueIndices[j].cost
 	})
 
-	topIndices := make([]int, r.n)
-	for i := 0; i < r.n; i++ {
+	topIndices := make([]int, n)
+	for i := 0; i < n; i++ {
 		topIndices[i] = valueIndices[i].index
 	}
 
