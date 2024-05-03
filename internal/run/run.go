@@ -24,7 +24,7 @@ func Run(algorithms map[string]algo.Algorithm, problems []*problem.Problem) {
 	}
 }
 
-func RunUltimate(problems []*problem.Problem, algorithmGenerator func() algo.Algorithm) {
+func RunUltimate(problems []*problem.Problem, name string, algorithmGenerator func() algo.Algorithm) {
 	directory := utils.CreateResultsDirectory()
 	rowChan := make(chan utils.UltimateCSVRow, len(problems))
 	var wg sync.WaitGroup
@@ -59,7 +59,7 @@ func RunUltimate(problems []*problem.Problem, algorithmGenerator func() algo.Alg
 		rows = append(rows, row)
 	}
 
-	utils.WriteUltimateToCsv(directory, "ultimate", rows)
+	utils.WriteUltimateToCsv(directory, name, rows)
 
 	fmt.Println("Finished running ultimate experiment")
 }

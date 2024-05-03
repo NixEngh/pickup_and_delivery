@@ -29,7 +29,7 @@ func NewAdaptivePolicy(operators ...operator.Operator) *AdaptivePolicy {
 
 	policy := &AdaptivePolicy{
 		operators:     operatorStructs,
-		r:             0.1,
+		r:             0.25,
 		segmentLength: 500,
 		bestCost:      math.MaxInt32,
 		compareSet:    NewCompareSet(),

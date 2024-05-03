@@ -219,6 +219,10 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 }
 
 func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
+	return s.GetAllFeasibleNon(callNumber)
+}
+
+func (s *Solution) GetAllFeasibleNon(callNumber int) []utils.InsertionPoint {
 	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)
@@ -238,7 +242,7 @@ func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
 	return feasibleInsertions
 }
 
-func (s *Solution) GetAllFeasiblearoisetn(callNumber int) []utils.InsertionPoint {
+func (s *Solution) GetAllFeasibleConc(callNumber int) []utils.InsertionPoint {
 	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)

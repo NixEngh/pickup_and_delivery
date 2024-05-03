@@ -1,6 +1,7 @@
 package algo
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -30,6 +31,7 @@ func (i *IterationBasedStopper) Reset() {
 type TimeBasedStopper struct {
 	createdAt int64
 	time      int64
+	i         int
 }
 
 func NewTimeBasedStopper(t int64) *TimeBasedStopper {
@@ -37,8 +39,13 @@ func NewTimeBasedStopper(t int64) *TimeBasedStopper {
 }
 
 func (t *TimeBasedStopper) CheckStop() bool {
+	t.i++
 	currentTime := time.Now().Unix()
-	return currentTime-t.createdAt > t.time
+	shouldStop := currentTime-t.createdAt > t.time
+	if shouldStop {
+		fmt.Println("TimeBasedStopper stopped after ", t.i, " iterations")
+	}
+	return shouldStop
 }
 
 func (t *TimeBasedStopper) Reset() {

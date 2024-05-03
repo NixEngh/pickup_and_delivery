@@ -2,6 +2,7 @@ package algo
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/operator"
 	"github.com/NixEngh/pickup_and_delivery/internal/policy"
@@ -20,11 +21,14 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 		var newS *solution.Solution
 
 		var iterationsSinceNewBest int
-		var allowedIterations int = 1000
+		var allowedIterations int = 500
+		//var numberOfEscapes int = int(math.Round(math.Sqrt(float64(problem.NumberOfCalls))))
+		var numberOfEscapes int = int(math.Sqrt(float64(problem.NumberOfCalls)))
 
 		fmt.Println("ALNS for operator policy: ", operatorPolicy.Name())
 
 		for !stopper.CheckStop() {
+
 			newS = S.Copy()
 			operatorPolicy.Apply(S)
 
@@ -36,7 +40,8 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 				S = newS
 			}
 			if iterationsSinceNewBest > allowedIterations {
-				for i := 0; i < 25; i++ {
+				S = bestSolution.Copy()
+				for i := 0; i < numberOfEscapes; i++ {
 					escape.Apply(S)
 				}
 				iterationsSinceNewBest = 0
@@ -44,7 +49,7 @@ func ALNS(operatorPolicy policy.OperatorPolicy, acceptor Acceptor, stopper Stopp
 		}
 		stopper.Reset()
 		fmt.Println()
-		fmt.Println("ALNS finished")
+		fmt.Println("ALNS finished for operator policy: ", problem.Name)
 
 		return bestSolution, bestSolution.Cost()
 	}
