@@ -47,8 +47,8 @@ func hashSolution(solution []int) string {
 	return hash
 }
 
-func NewCompareSet() *CompareSet {
-	return &CompareSet{
+func NewCompareSet() CompareSet {
+	return CompareSet{
 		visited: make(map[string]bool),
 	}
 }

@@ -56,3 +56,7 @@ func (r *TimeR2RAcceptor) Accept(s, newS, bestS *solution.Solution) bool {
 
 	return float64(newS.Cost()) < float64(bestS.Cost())+D
 }
+
+func (r *TimeR2RAcceptor) Reset() {
+	r.finishTime = time.Now().Unix() + r.totalTime
+}

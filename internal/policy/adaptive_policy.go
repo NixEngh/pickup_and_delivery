@@ -2,6 +2,7 @@ package policy
 
 import (
 	"math"
+	"math/rand"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/operator"
 	"github.com/NixEngh/pickup_and_delivery/internal/solution"
@@ -13,7 +14,7 @@ type AdaptivePolicy struct {
 	segmentLength int
 	r             float64
 	bestCost      int
-	compareSet    *CompareSet
+	compareSet    CompareSet
 }
 
 func NewAdaptivePolicy(operators ...operator.Operator) *AdaptivePolicy {
@@ -29,7 +30,7 @@ func NewAdaptivePolicy(operators ...operator.Operator) *AdaptivePolicy {
 	policy := &AdaptivePolicy{
 		operators:     operatorStructs,
 		r:             0.1,
-		segmentLength: 100,
+		segmentLength: 500,
 		bestCost:      math.MaxInt32,
 		compareSet:    NewCompareSet(),
 	}
@@ -81,4 +82,20 @@ func (p *AdaptivePolicy) UpdateProbabilities() {
 
 func (p *AdaptivePolicy) Name() string {
 	return "AdaptivePolicy"
+}
+
+func ChooseWeightedOperator(operators []*OperatorStruct) *OperatorStruct {
+	var total float64
+	for _, op := range operators {
+		total += op.Probability
+	}
+
+	r := rand.Float64() * total
+	for _, op := range operators {
+		if r -= op.Probability; r < 0 {
+			return op
+		}
+	}
+
+	panic("Should not reach here")
 }

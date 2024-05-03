@@ -8,12 +8,11 @@ import (
 )
 
 func RunFinalExam(problems []*problem.Problem) {
-	algorithms := map[string]algo.Algorithm{
-		"Attempt": Attempt(),
-	}
+	RunUltimate(problems, AttemptGenerator)
+}
 
-	Run(algorithms, problems)
-
+func AttemptGenerator() algo.Algorithm {
+	return Attempt()
 }
 
 func Attempt() algo.Algorithm {
@@ -27,30 +26,38 @@ func Attempt() algo.Algorithm {
 		operator.NewCombineOperator(
 			operator.NewRemoveRandom(20),
 			operator.NewInsertGreedy(),
-			"Operator 3",
+			"Operator 7",
 		),
 		operator.NewCombineOperator(
-			operator.NewRemoveRandom(40),
+			operator.NewRemoveRandom(30),
 			operator.NewInsertGreedy(),
 			"Operator 4",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(10),
 			operator.NewInsertGreedy(),
-			"Operator 4",
+			"Operator 5",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(20),
 			operator.NewInsertGreedy(),
-			"Operator 5",
+			"Operator 6",
+		),
+		operator.NewCombineOperator(
+			operator.NewRemoveCostly(30),
+			operator.NewInsertGreedy(),
+			"Operator 7",
 		),
 	)
 
-	iterations := 10000
+	var time int64 = 60 * 15
 
-	acceptor := algo.NewIterationR2RAcceptor(iterations)
+	acceptor := algo.NewTimeR2RAcceptor(time)
 
-	stopper := algo.NewIterationBasedStopper(iterations)
+	stopper := algo.NewTimeBasedStopper(time)
+
+	//acceptor := algo.NewIterationR2RAcceptor(10000)
+	//stopper := algo.NewIterationBasedStopper(10000)
 
 	return algo.ALNS(pol, acceptor, stopper)
 }

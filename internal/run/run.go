@@ -2,6 +2,7 @@ package run
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/NixEngh/pickup_and_delivery/internal/algo"
@@ -21,7 +22,46 @@ func Run(algorithms map[string]algo.Algorithm, problems []*problem.Problem) {
 		}
 		utils.WriteToCSV(directory, p.Name, rows)
 	}
-	utils.RunPythonScript(directory)
+}
+
+func RunUltimate(problems []*problem.Problem, algorithmGenerator func() algo.Algorithm) {
+	directory := utils.CreateResultsDirectory()
+	rowChan := make(chan utils.UltimateCSVRow, len(problems))
+	var wg sync.WaitGroup
+
+	fmt.Println("Running ultimate experiment at ", time.Now())
+
+	for _, p := range problems {
+		wg.Add(1)
+		go func(problem *problem.Problem, channel chan utils.UltimateCSVRow, wg *sync.WaitGroup) {
+			defer wg.Done()
+			is := solution.GenerateInitialSolution(problem)
+			initialCost := is.Cost()
+			algorithm := algorithmGenerator()
+			solution, cost := algorithm(problem)
+			row := utils.UltimateCSVRow{
+				Instance:     problem.Name,
+				BestCost:     cost,
+				Improvement:  utils.CalculateImprovement(initialCost, cost),
+				BestSolution: solution.Solution,
+			}
+			rowChan <- row
+		}(p, rowChan, &wg)
+	}
+
+	go func() {
+		wg.Wait()
+		close(rowChan)
+	}()
+
+	rows := make([]utils.UltimateCSVRow, 0)
+	for row := range rowChan {
+		rows = append(rows, row)
+	}
+
+	utils.WriteUltimateToCsv(directory, "ultimate", rows)
+
+	fmt.Println("Finished running ultimate experiment")
 }
 
 func RunExperiment(problem *problem.Problem, algorithmName string, algorithm algo.Algorithm) utils.CSVTableRow {

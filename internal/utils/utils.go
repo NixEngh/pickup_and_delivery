@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -112,6 +113,39 @@ func PrintLoadingBar(current int, total int, steps int) {
 	}
 }
 
+type UltimateCSVRow struct {
+	Instance     string
+	BestCost     int
+	Improvement  float64
+	BestSolution []int
+}
+
+func WriteUltimateToCsv(directory string, name string, data []UltimateCSVRow) {
+	file, err := os.Create(directory + "/" + name + ".csv")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	fmt.Println(data[0].Instance)
+	sort.Slice(data, func(i, j int) bool {
+		i1, _ := strconv.Atoi(strings.Split(data[i].Instance, "_")[1])
+		j1, _ := strconv.Atoi(strings.Split(data[j].Instance, "_")[1])
+
+		return i1 < j1
+	})
+
+	writer.Write([]string{"Instance", "BestCost", "Improvement", "BestSolution"})
+
+	for _, row := range data {
+		bestSolution := fmt.Sprintf("%v", row.BestSolution)
+		writer.Write([]string{row.Instance, fmt.Sprintf("%d", row.BestCost), fmt.Sprintf("%f", row.Improvement), bestSolution})
+	}
+}
+
 type CSVTableRow struct {
 	Algorithm    string
 	AverageCost  float64
@@ -181,4 +215,8 @@ func RunPythonScript(directory string) {
 		fmt.Println("Stderr:", stderr.String()) // Print any standard error output
 		panic(err)
 	}
+}
+
+func CalculateImprovement(initialCost, bestCost int) float64 {
+	return 100 * (float64(initialCost) - float64(bestCost)) / float64(initialCost)
 }

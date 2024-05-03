@@ -2,8 +2,6 @@ package algo
 
 import (
 	"time"
-
-	"github.com/NixEngh/pickup_and_delivery/internal/utils"
 )
 
 type Stopper interface {
@@ -22,7 +20,6 @@ func NewIterationBasedStopper(iterations int) *IterationBasedStopper {
 
 func (i *IterationBasedStopper) CheckStop() bool {
 	i.i++
-	utils.PrintLoadingBar(i.i, i.iterations, 50)
 	return i.i > i.iterations
 }
 
@@ -41,5 +38,9 @@ func NewTimeBasedStopper(t int64) *TimeBasedStopper {
 
 func (t *TimeBasedStopper) CheckStop() bool {
 	currentTime := time.Now().Unix()
-	return currentTime-t.createdAt <= t.time
+	return currentTime-t.createdAt > t.time
+}
+
+func (t *TimeBasedStopper) Reset() {
+	t.createdAt = time.Now().Unix()
 }

@@ -218,7 +218,7 @@ func (s *Solution) GetVehicleInsertionPoints(vehicleIndex, callNumber int) []uti
 	return result
 }
 
-func (s *Solution) GetAllFeasibleNonConcurrent(callNumber int) []utils.InsertionPoint {
+func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
 	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)
@@ -238,7 +238,7 @@ func (s *Solution) GetAllFeasibleNonConcurrent(callNumber int) []utils.Insertion
 	return feasibleInsertions
 }
 
-func (s *Solution) GetAllFeasible(callNumber int) []utils.InsertionPoint {
+func (s *Solution) GetAllFeasiblearoisetn(callNumber int) []utils.InsertionPoint {
 	inds := utils.FindIndices(s.Solution, callNumber)
 
 	inds = s.MoveCallToOutsource(callNumber, inds)
