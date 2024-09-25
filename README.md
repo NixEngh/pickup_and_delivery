@@ -1,4 +1,4 @@
-# This is my solution for the inf273 Pickup and Delivery Problem
+# inf273 Pickup and Delivery Problem attempt
 ## How to run
 `make run`
 ## data
