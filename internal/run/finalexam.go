@@ -26,27 +26,27 @@ func Attempt4() algo.Algorithm {
 		operator.NewCombineOperator(
 			operator.NewRemoveRandom(10),
 			operator.NewInsertGreedy(),
-			"Operator 7",
+			"Operator 2",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveRandom(15),
 			operator.NewInsertGreedy(),
-			"Operator 4",
+			"Operator 3",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(5),
 			operator.NewInsertGreedy(),
-			"Operator 5",
+			"Operator 4",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(10),
 			operator.NewInsertGreedy(),
-			"Operator 6",
+			"Operator 5",
 		),
 		operator.NewCombineOperator(
 			operator.NewRemoveCostly(15),
 			operator.NewInsertGreedy(),
-			"Operator 7",
+			"Operator 6",
 		),
 	)
 
